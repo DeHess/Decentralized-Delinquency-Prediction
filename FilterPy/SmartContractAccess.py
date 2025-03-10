@@ -54,21 +54,24 @@ def call_contract_method():
     except Exception as e:
         print(f"Error calling method: {e}")
 
-# Transaction Call
+# Transaction Call (Write)
 def send_transaction():
     account = w3.eth.accounts[0] 
-    transaction = contract.functions.setValue(42).buildTransaction({
+    transaction = contract.functions.setValue(42).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
-        'gasPrice': w3.toWei('20', 'gwei'),
-        'nonce': w3.eth.getTransactionCount(account),
+        'gasPrice': w3.to_wei('20', 'gwei'),
+        'nonce': w3.eth.get_transaction_count(account),
     })
 
-    signed_txn = w3.eth.account.signTransaction(transaction, private_key)
+    signed_txn = w3.eth.account.sign_transaction(transaction, private_key)
 
-    txn_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent with hash: {txn_hash.hex()}")
 
-
+print("=== Reading Values ===")
 call_contract_method()
-# send_transaction() 
+print("=== Running Filter ===")
+send_transaction() 
+print("=== Safety Check ===")
+call_contract_method()
