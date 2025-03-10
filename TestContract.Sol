@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SimpleStorage {
+    uint256 private value;
+
+    // Set the value (state-changing function)
+    function setValue(uint256 _value) public {
+        value = _value;
+    }
+
+    // Get the value (view-only function)
+    function getValue() public view returns (uint256) {
+        return value;
+    }
+}
