@@ -68,38 +68,20 @@ contract_abi = [
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 def listen_to_events():
-    print(str(contract.events.PleaseProcessMe))
     event_filter = w3.eth.filter({
         "address": contract_address,
         "topics": [w3.keccak(text="PleaseProcessMe(address)").hex()]
     })
 
     while True:
-        print("Scanning")
-        for event in w3.eth.get_filter_changes(event_filter.filter_id):
-            handle_event(event)
+        print(str(w3.eth.get_filter_changes(event_filter.filter_id)))
+        print("========")
         time.sleep(5) 
         
-
-def handle_event(event):
-    print(f"Event detected: {event}")
-    sender_address = event["args"].get("_addr")
-    print(f"Processing event for: {sender_address}")
 
 if __name__ == "__main__":
     print("Listening for PleaseProcessMe events...")
     listen_to_events()
-
-
-
-
-
-
-
-
-
-
-
 
 
 
