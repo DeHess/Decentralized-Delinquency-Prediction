@@ -1,4 +1,5 @@
 import sys
+import time
 from web3 import Web3
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
@@ -17,14 +18,21 @@ private_key = sys.argv[2]
 
 contract_abi = [
 	{
+		"anonymous": False,
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "_value",
-				"type": "uint256"
+				"indexed": True,
+				"internalType": "address",
+				"name": "_addr",
+				"type": "address"
 			}
 		],
-		"name": "setValue",
+		"name": "PleaseProcessMe",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "getCreditScore",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -41,16 +49,66 @@ contract_abi = [
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "setValue",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]
 
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
+def listen_to_events():
+    print(str(contract.events.PleaseProcessMe))
+    event_filter = w3.eth.filter({
+        "address": contract_address,
+        "topics": [w3.keccak(text="PleaseProcessMe(address)").hex()]
+    })
+
+    while True:
+        print("Scanning")
+        for event in w3.eth.get_filter_changes(event_filter.filter_id):
+            handle_event(event)
+        time.sleep(5) 
+        
+
+def handle_event(event):
+    print(f"Event detected: {event}")
+    sender_address = event["args"].get("_addr")
+    print(f"Processing event for: {sender_address}")
+
+if __name__ == "__main__":
+    print("Listening for PleaseProcessMe events...")
+    listen_to_events()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
 # Read Only Method
 def call_contract_method():
     try:
         result = contract.functions.getValue().call()
-        print(f"Result from contract method: {result}")
+        print(f"Value Stored in Storage: {result}")
     except Exception as e:
         print(f"Error calling method: {e}")
 
@@ -69,9 +127,4 @@ def send_transaction():
     txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent with hash: {txn_hash.hex()}")
 
-print("=== Reading Values ===")
-call_contract_method()
-print("=== Running Filter ===")
-send_transaction() 
-print("=== Safety Check ===")
-call_contract_method()
+"""
