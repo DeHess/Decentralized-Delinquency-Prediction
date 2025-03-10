@@ -4,9 +4,12 @@
 # First Time setup 
 - Nethereum: npm init -y
 - Nethereum: npm install --save-dev hardhat
+- Nethereum: npm i kill-port -g
 - Filterpy: python -m venv venv
 - Filterpy: pip install -r requirements.txt
 
+
+# Run it 
 Console 1: Start TestNet
 - Nethereum: npx hardhat node
 
@@ -20,5 +23,8 @@ Console 2: Start Python Program
 - Filterpy: python SmartContractAccess.py
 
 
+
+# Destruct it
+Nethereum: kill-port 8545
 
 
