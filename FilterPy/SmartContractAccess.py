@@ -25,40 +25,75 @@ contract_abi = [
 				"internalType": "address",
 				"name": "_addr",
 				"type": "address"
+			},
+			{
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
 			}
 		],
-		"name": "PleaseProcessMe",
+		"name": "IncomingRequest",
+		"type": "event"
+	},
+	{
+		"anonymous": False,
+		"inputs": [
+			{
+				"indexed": True,
+				"internalType": "address",
+				"name": "_addr",
+				"type": "address"
+			}
+		],
+		"name": "RequestFail",
+		"type": "event"
+	},
+	{
+		"anonymous": False,
+		"inputs": [
+			{
+				"indexed": True,
+				"internalType": "address",
+				"name": "_addr",
+				"type": "address"
+			},
+			{
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "RequestSuccess",
 		"type": "event"
 	},
 	{
 		"inputs": [],
-		"name": "getCreditScore",
+		"name": "makeCreditRequest",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getValue",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			},
+			{
 				"internalType": "uint256",
-				"name": "_value",
+				"name": "updatedValue",
 				"type": "uint256"
 			}
 		],
-		"name": "setValue",
+		"name": "postFilterResult",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -70,7 +105,7 @@ contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 def listen_to_events():
     event_filter = w3.eth.filter({
         "address": contract_address,
-        "topics": [w3.keccak(text="PleaseProcessMe(address)").hex()]
+        "topics": [w3.keccak(text="IncomingRequest(address,uint256)").hex()]
     })
 
     while True:
@@ -108,5 +143,4 @@ def send_transaction():
 
     txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent with hash: {txn_hash.hex()}")
-
 """
