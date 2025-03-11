@@ -12,10 +12,9 @@ if len(sys.argv) < 3:
     print("Usage: python SmartContractAccess.py <contract_address> <private_key>")
     sys.exit(1)
 
+account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 contract_address = sys.argv[1] 
 private_key = sys.argv[2]
-
-
 contract_abi = [
 	{
 		"anonymous": False,
@@ -102,6 +101,21 @@ contract_abi = [
 
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
+
+def post_filter_results(sender, passed, updatedValue):
+    transaction = contract.functions.postFilterResult(sender, passed, updatedValue).build_transaction({
+        'chainId': 1337, 
+        'gas': 2000000,
+        'gasPrice': w3.to_wei('20', 'gwei'),
+        'nonce': w3.eth.get_transaction_count(account),
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(transaction, private_key)
+
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+    print(f"Transaction sent with hash: {txn_hash.hex()}")
+
+
 def listen_to_events():
     event_filter = w3.eth.filter({
         "address": contract_address,
@@ -109,14 +123,21 @@ def listen_to_events():
     })
 
     while True:
-        print(str(w3.eth.get_filter_changes(event_filter.filter_id)))
-        print("========")
-        time.sleep(5) 
-        
+        logs = w3.eth.get_filter_changes(event_filter.filter_id)
+        for log in logs:
+            sender = "0x" + log["topics"][1].hex()[-40:]  # Extract Ethereum address
+            value = int.from_bytes(log["data"], byteorder="big")  # Convert to integer
+            post_filter_results(Web3.to_checksum_address(sender), True, (value + 1))
+            print("========")
 
+        time.sleep(5)
+
+       
 if __name__ == "__main__":
-    print("Listening for PleaseProcessMe events...")
+    print("Listening for Requests...")
     listen_to_events()
+
+
 
 
 
@@ -128,19 +149,4 @@ def call_contract_method():
         print(f"Value Stored in Storage: {result}")
     except Exception as e:
         print(f"Error calling method: {e}")
-
-# Transaction Call (Write)
-def send_transaction():
-    account = w3.eth.accounts[0] 
-    transaction = contract.functions.setValue(42).build_transaction({
-        'chainId': 1337, 
-        'gas': 2000000,
-        'gasPrice': w3.to_wei('20', 'gwei'),
-        'nonce': w3.eth.get_transaction_count(account),
-    })
-
-    signed_txn = w3.eth.account.sign_transaction(transaction, private_key)
-
-    txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    print(f"Transaction sent with hash: {txn_hash.hex()}")
 """
