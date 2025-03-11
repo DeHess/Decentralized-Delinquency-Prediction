@@ -12,19 +12,22 @@
 # Run it 
 Console 1: Start TestNet
 - Nethereum: npx hardhat node
+- Keep Account Address
+- Keep Account Private Key
 
 Remix: 
 - Connect to Dev Hardhat Provider
-- Deploy Contracts
-- Copy Address into Program
+- Ensure you chose the right account with the address you previously copied from the hardhat console
+- Deploy Contract
+- Keep Contract Address
  
 Console 2: Start Python Program
 - Filterpy: venv/Scripts/activate
-- Filterpy: python SmartContractAccess.py
+- Filterpy: python SmartContractAccess.py <Contract Address> <Private Key>
 
 
 
-# Destruct it
+# Destruct Network
 Nethereum: kill-port 8545
 
 
