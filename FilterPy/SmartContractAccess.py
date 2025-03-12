@@ -17,6 +17,11 @@ contract_address = sys.argv[1]
 private_key = sys.argv[2]
 contract_abi = [
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
 		"anonymous": False,
 		"inputs": [
 			{
@@ -33,6 +38,25 @@ contract_abi = [
 			}
 		],
 		"name": "IncomingRequest",
+		"type": "event"
+	},
+	{
+		"anonymous": False,
+		"inputs": [
+			{
+				"indexed": True,
+				"internalType": "address",
+				"name": "_addr",
+				"type": "address"
+			},
+			{
+				"indexed": False,
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			}
+		],
+		"name": "RequestDenied",
 		"type": "event"
 	},
 	{
@@ -69,9 +93,67 @@ contract_abi = [
 	},
 	{
 		"inputs": [],
+		"name": "cooldownTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getRequestPrice",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getValue",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "lastRequestTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "makeCreditRequest",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -96,6 +178,19 @@ contract_abi = [
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_requestPrice",
+				"type": "uint256"
+			}
+		],
+		"name": "setRequestPrice",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]
 
@@ -113,7 +208,15 @@ def post_filter_results(sender, passed, updatedValue):
     signed_txn = w3.eth.account.sign_transaction(transaction, private_key)
 
     txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    print(f"Transaction sent with hash: {txn_hash.hex()}")
+    print(f"Transaction sent successfully with hash: {txn_hash.hex()}")
+    
+	# Price Recalculation
+    txn_receipt = w3.eth.wait_for_transaction_receipt(txn_hash)
+    gas_used = txn_receipt.gasUsed
+    print(f"Gas Used: {gas_used}")
+    gas_price = w3.eth.gas_price
+    print(f"Current gas price: {gas_price} wei")
+    print(f"Current price for a request: {gas_used * gas_price} wei")
 
 
 def listen_to_events():
