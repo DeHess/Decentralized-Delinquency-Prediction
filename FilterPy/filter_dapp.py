@@ -13,8 +13,8 @@ if len(sys.argv) < 3:
     sys.exit(1)
 
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
-contract_address = sys.argv[1] 
-private_key = sys.argv[2]
+private_key = sys.argv[1]
+contract_address = sys.argv[2] 
 contract_abi = [
 	{
 		"inputs": [],
@@ -51,6 +51,25 @@ contract_abi = [
 			},
 			{
 				"indexed": False,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "PassOutTree",
+		"type": "event"
+	},
+	{
+		"anonymous": False,
+		"inputs": [
+			{
+				"indexed": True,
+				"internalType": "address",
+				"name": "_addr",
+				"type": "address"
+			},
+			{
+				"indexed": False,
 				"internalType": "string",
 				"name": "reason",
 				"type": "string"
@@ -67,29 +86,35 @@ contract_abi = [
 				"internalType": "address",
 				"name": "_addr",
 				"type": "address"
+			},
+			{
+				"indexed": False,
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
 			}
 		],
 		"name": "RequestFail",
 		"type": "event"
 	},
 	{
-		"anonymous": False,
 		"inputs": [
 			{
-				"indexed": True,
 				"internalType": "address",
-				"name": "_addr",
+				"name": "",
 				"type": "address"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256",
-				"name": "value",
-				"type": "uint256"
 			}
 		],
-		"name": "RequestSuccess",
-		"type": "event"
+		"name": "allowedAddresses",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -191,6 +216,13 @@ contract_abi = [
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "writeSubTreeAnswer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
 ]
 
@@ -204,29 +236,19 @@ def post_filter_results(sender, passed, updatedValue):
         'gasPrice': w3.to_wei('20', 'gwei'),
         'nonce': w3.eth.get_transaction_count(account),
     })
-
     signed_txn = w3.eth.account.sign_transaction(transaction, private_key)
-
     txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent successfully with hash: {txn_hash.hex()}")
-    
-	# Price Recalculation
-    txn_receipt = w3.eth.wait_for_transaction_receipt(txn_hash)
-    gas_used = txn_receipt.gasUsed
-    print(f"Gas Used: {gas_used}")
-    gas_price = w3.eth.gas_price
-    print(f"Current gas price: {gas_price} wei")
-    print(f"Current price for a request: {gas_used * gas_price} wei")
 
 
-def listen_to_events():
-    event_filter = w3.eth.filter({
+def listen_for_incoming_requests():
+    incoming_request_filter = w3.eth.filter({
         "address": contract_address,
         "topics": [w3.keccak(text="IncomingRequest(address,uint256)").hex()]
     })
 
     while True:
-        logs = w3.eth.get_filter_changes(event_filter.filter_id)
+        logs = w3.eth.get_filter_changes(incoming_request_filter.filter_id)
         for log in logs:
             sender = "0x" + log["topics"][1].hex()[-40:]  # Extract Ethereum address
             value = int.from_bytes(log["data"], byteorder="big")  # Convert to integer
@@ -238,7 +260,9 @@ def listen_to_events():
        
 if __name__ == "__main__":
     print("Listening for Requests...")
-    listen_to_events()
+    listen_for_incoming_requests()
+
+
 
 
 
