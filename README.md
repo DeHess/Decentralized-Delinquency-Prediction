@@ -4,6 +4,7 @@
 # First Time setup 
 - Nethereum: npm init -y
 - Nethereum: npm install --save-dev hardhat
+- Nethereum: npm install --save-dev @nomicfoundation/hardhat-ethers
 - Nethereum: npm i kill-port -g
 - Filterpy: python -m venv venv
 - Filterpy: pip install -r requirements.txt
@@ -23,7 +24,7 @@ Remix:
  
 Console 2: Start Python Program
 - Filterpy: venv/Scripts/activate
-- Filterpy: python SmartContractAccess.py <Contract Address> <Private Key>
+- Filterpy: python filter_dapp.py <Private Key> <Contract Address>
 
 
 

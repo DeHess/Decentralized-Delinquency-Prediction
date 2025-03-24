@@ -252,7 +252,6 @@ def listen_for_passout_events():
         logs = w3.eth.get_filter_changes(pass_out_filter.filter_id)
         for log in logs:
             post_subtree_results()
-            print("Pass out tree event")
             print("========")
 
         time.sleep(5)
