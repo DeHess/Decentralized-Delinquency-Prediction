@@ -229,7 +229,7 @@ contract_abi = [
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def post_subtree_results():
+def post_subtree_results(result):
     transaction = contract.functions.writeSubTreeAnswer().build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
