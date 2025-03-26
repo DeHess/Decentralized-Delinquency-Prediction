@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 traindata = pd.read_csv("Data/cs-training.csv")
 
 X = traindata.drop("SeriousDlqin2yrs", axis=1)
+X = X.drop("Id", axis= 1)
 y = traindata["SeriousDlqin2yrs"]
 
 
@@ -42,7 +43,7 @@ model.fit(
     verbose=False
 )
 
-evals_result = model.evals_result()  # Retrieve evaluation results after training
+evals_result = model.evals_result()
 
 train_errors = evals_result["validation_0"]["error"]
 test_errors  = evals_result["validation_1"]["error"]

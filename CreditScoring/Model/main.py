@@ -1,31 +1,51 @@
 import xgboost as xgb
 import pandas as pd
+import joblib
+import numpy as np
+import shap
 
-# Load the data and remove the target column (if necessary)
-data = pd.read_csv("Data/cs-test.csv")
-print(data.iloc[0:1])
-data = data.drop("SeriousDlqin2yrs", axis=1)
-with open("Data/cs-test.csv", "r") as f:
-    print(f.readline())  # Print the header
-    print(f.readline())  # Print the first data row
-
-# Load the model
+scaler = joblib.load("outlier_scaler.pkl")
+model_outlier = joblib.load("outlier_model.pkl")
 model = xgb.Booster()
 model.load_model("model.json")
 
-# Select the first 100 entries
-first_100_entries = data.iloc[:100]
 
-for i in range(100):
-    entry=data.iloc[i:i+1]
+data = pd.read_csv("Data/cs-test.csv")
+data = data.drop("SeriousDlqin2yrs" , axis=1)
+data = data.drop("Id" , axis=1)
+first_entry = data.iloc[0:1]
+dmatrix_first = xgb.DMatrix(first_entry)
 
 
-"""
+entry_np = first_entry.to_numpy()
+entry_np = np.nan_to_num(entry_np, nan=0.0)
+entry_scaled = scaler.transform(entry_np)
+is_outlier = model_outlier.predict(entry_scaled)[0]
+# 1 true 0 false
+print(f"This data is an outlier: {is_outlier}")
 
-# 1. Print out the structure of each tree
+
+shaptrain = pd.read_csv("Data/cs-test.csv")
+shaptrain = shaptrain.drop("SeriousDlqin2yrs" , axis=1)
+shaptrain = shaptrain.drop("Id" , axis=1)
+X_shap = np.nan_to_num(shaptrain, nan=0.0)
+X_shap_scaled = scaler.transform(X_shap)
+
+background = X_shap_scaled[np.random.choice(X_shap_scaled.shape[0], 100, replace=False)]
+
+def anomaly_score(x):
+    return model_outlier.decision_function(x)
+
+
+explainer = shap.KernelExplainer(anomaly_score, background)
+shap_values = explainer.shap_values(entry_scaled)
+
+
+print("Anomaly score: ", anomaly_score(entry_scaled)[0])
+print(shap_values)
+
 tree_dumps = model.get_dump(with_stats=True)
-for idx, tree in enumerate(tree_dumps):
-    print(f"Tree {idx} structure:")
-    print(tree)
-    print("-" * 40)
-"""
+##for idx, tree in enumerate(tree_dumps):
+  #  print(f"Tree {idx} structure:")
+   # print(tree)
+    #print("-" * 40)
