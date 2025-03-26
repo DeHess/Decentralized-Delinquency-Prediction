@@ -1,6 +1,7 @@
 import sys
 import time
 from web3 import Web3
+from eth_abi import decode
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -15,7 +16,7 @@ if len(sys.argv) < 3:
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
-contract_abi = [
+contract_abi =[
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -32,9 +33,9 @@ contract_abi = [
 			},
 			{
 				"indexed": False,
-				"internalType": "uint256",
-				"name": "value",
-				"type": "uint256"
+				"internalType": "uint256[]",
+				"name": "heldData",
+				"type": "uint256[]"
 			}
 		],
 		"name": "IncomingRequest",
@@ -51,9 +52,9 @@ contract_abi = [
 			},
 			{
 				"indexed": False,
-				"internalType": "uint256",
-				"name": "value",
-				"type": "uint256"
+				"internalType": "uint256[]",
+				"name": "heldData",
+				"type": "uint256[]"
 			}
 		],
 		"name": "PassOutTree",
@@ -118,52 +119,7 @@ contract_abi = [
 	},
 	{
 		"inputs": [],
-		"name": "cooldownTime",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getRequestPrice",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "getValue",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "lastRequestTime",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -192,27 +148,9 @@ contract_abi = [
 				"internalType": "bool",
 				"name": "passed",
 				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "updatedValue",
-				"type": "uint256"
 			}
 		],
 		"name": "postFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_requestPrice",
-				"type": "uint256"
-			}
-		],
-		"name": "setRequestPrice",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -229,8 +167,8 @@ contract_abi = [
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def post_filter_results(sender, passed, updatedValue):
-    transaction = contract.functions.postFilterResult(sender, passed, updatedValue).build_transaction({
+def post_filter_results(sender, passed):
+    transaction = contract.functions.postFilterResult(sender, passed).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -244,19 +182,22 @@ def post_filter_results(sender, passed, updatedValue):
 def listen_for_incoming_requests():
     incoming_request_filter = w3.eth.filter({
         "address": contract_address,
-        "topics": [w3.keccak(text="IncomingRequest(address,uint256)").hex()]
+        "topics": [w3.keccak(text="IncomingRequest(address,uint256[])").hex()]
     })
-
+    
     while True:
         logs = w3.eth.get_filter_changes(incoming_request_filter.filter_id)
         for log in logs:
-            sender = "0x" + log["topics"][1].hex()[-40:]  # Extract Ethereum address
-            value = int.from_bytes(log["data"], byteorder="big")  # Convert to integer
-            post_filter_results(Web3.to_checksum_address(sender), True, (value + 1))
+            sender = "0x" + log["topics"][1].hex()[-40:]
+            data_bytes = log["data"]
+            data = decode(["uint256[]"], data_bytes)[0]
+            
+            print(f"Sender: {sender}")
+            print("Values:", data)
+            post_filter_results(Web3.to_checksum_address(sender), True)
             print("========")
-
+            
         time.sleep(5)
-
        
 if __name__ == "__main__":
     print("Listening for Requests...")

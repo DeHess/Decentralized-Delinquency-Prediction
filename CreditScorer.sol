@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol"; 
 
 contract CreditScorer {
-
+    //Id,SeriousDlqin2yrs,RevolvingUtilizationOfUnsecuredLines,age,NumberOfTime30-59DaysPastDueNotWorse,DebtRatio,MonthlyIncome,NumberOfOpenCreditLinesAndLoans,NumberOfTimes90DaysLate,NumberRealEstateLoansOrLines,NumberOfTime60-89DaysPastDueNotWorse,NumberOfDependents
+    //1,1,0.766126609,45,2,0.802982129,9120,13,0,6,0,2
+    uint256[] private testData = [1, 766126609, 45, 2, 802982129, 9120, 13, 0, 6, 0, 2];
     address private admin;
     mapping(address => bool) public allowedAddresses;
 
@@ -16,8 +18,8 @@ contract CreditScorer {
     // Mock Data
     uint256 private value;
 
-    event IncomingRequest(address indexed _addr, uint256 value);
-    event PassOutTree(address indexed _addr, uint256 value);
+    event IncomingRequest(address indexed _addr, uint256[] heldData);
+    event PassOutTree(address indexed _addr, uint256[] heldData);
     event RequestDenied(address indexed _addr, string reason);
     event RequestFail(address indexed _addr, string reason);
 
@@ -35,22 +37,26 @@ contract CreditScorer {
         //    emit RequestDenied(msg.sender, "Cooldown period not yet over");
         //}
 
-        //Enshrine
+        //Enshrine using uint256[] memory dataArray in parameters, and saving the request data
 
-        emit IncomingRequest(msg.sender, value);
+        emit IncomingRequest(msg.sender, testData);
     }      
 
 
-    // This method is called by the off-chain Filter dApp
-    function postFilterResult(address requester, bool passed, uint256 updatedValue) public {
+    // This method is called by the off-chain Filter-dApp
+    function postFilterResult(address requester, bool passed) public {
         require(msg.sender == admin, "Requires admin credentials");
         if (passed) {
-            value = updatedValue;
-            emit PassOutTree(msg.sender, value);
+            emit PassOutTree(msg.sender, testData);
         } else { 
             emit RequestFail(requester, "Filter said no");
         }
     }
+
+
+
+
+
 
     //This method is called by SubTreeContractors dApps
     function writeSubTreeAnswer() public {
