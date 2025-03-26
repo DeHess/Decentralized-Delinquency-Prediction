@@ -16,7 +16,7 @@ if len(sys.argv) < 3:
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
-contract_abi =[
+contract_abi = [
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -42,6 +42,13 @@ contract_abi =[
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "makeCreditRequest",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"anonymous": False,
 		"inputs": [
 			{
@@ -59,6 +66,24 @@ contract_abi =[
 		],
 		"name": "PassOutTree",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			}
+		],
+		"name": "preFilterResult",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"anonymous": False,
@@ -99,6 +124,13 @@ contract_abi =[
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "writeSubTreeAnswer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -129,46 +161,14 @@ contract_abi =[
 		],
 		"stateMutability": "view",
 		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "makeCreditRequest",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "passed",
-				"type": "bool"
-			}
-		],
-		"name": "postFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "writeSubTreeAnswer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	}
 ]
 
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def post_filter_results(sender, passed):
-    transaction = contract.functions.postFilterResult(sender, passed).build_transaction({
+def send_pre_filter_results(sender, passed):
+    transaction = contract.functions.preFilterResult(sender, passed).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -194,7 +194,7 @@ def listen_for_incoming_requests():
             
             print(f"Sender: {sender}")
             print("Values:", data)
-            post_filter_results(Web3.to_checksum_address(sender), True)
+            send_pre_filter_results(Web3.to_checksum_address(sender), True)
             print("========")
             
         time.sleep(5)
