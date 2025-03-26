@@ -10,12 +10,13 @@ model = xgb.Booster()
 model.load_model("model.json")
 
 
-data = pd.read_csv("Data/cs-test.csv")
+data = pd.read_csv("../Data/cs-test.csv")
 data = data.drop("SeriousDlqin2yrs" , axis=1)
 data = data.drop("Id" , axis=1)
 first_entry = data.iloc[0:1]
 dmatrix_first = xgb.DMatrix(first_entry)
 
+#
 
 entry_np = first_entry.to_numpy()
 entry_np = np.nan_to_num(entry_np, nan=0.0)
@@ -25,7 +26,7 @@ is_outlier = model_outlier.predict(entry_scaled)[0]
 print(f"This data is an outlier: {is_outlier}")
 
 
-shaptrain = pd.read_csv("Data/cs-test.csv")
+shaptrain = pd.read_csv("../Data/cs-test.csv")
 shaptrain = shaptrain.drop("SeriousDlqin2yrs" , axis=1)
 shaptrain = shaptrain.drop("Id" , axis=1)
 X_shap = np.nan_to_num(shaptrain, nan=0.0)
@@ -49,3 +50,5 @@ tree_dumps = model.get_dump(with_stats=True)
   #  print(f"Tree {idx} structure:")
    # print(tree)
     #print("-" * 40)
+
+print(model.predict(dmatrix_first))

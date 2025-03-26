@@ -3,7 +3,7 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
-traindata = pd.read_csv("Data/cs-training.csv")
+traindata = pd.read_csv("../Data/cs-training.csv")
 
 X = traindata.drop("SeriousDlqin2yrs", axis=1)
 X = X.drop("Id", axis= 1)
@@ -25,7 +25,7 @@ best_params = {
     "subsample": 0.8,            
     "colsample_bytree": 0.8,    
     "objective": "binary:logistic", 
-    "n_estimators": 398,
+    "n_estimators": 261,
     "eval_metric": 'error',    
     "lambda": 0.5,
     "scale_pos_weight": 0.757,
