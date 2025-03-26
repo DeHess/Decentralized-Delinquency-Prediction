@@ -179,6 +179,7 @@ def post_subtree_results():
     txn_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
     print(f"Transaction sent successfully with hash: {txn_hash.hex()}")
 
+# We need: Input Array, Id of Subtree
 
 
 def listen_for_passout_events():
