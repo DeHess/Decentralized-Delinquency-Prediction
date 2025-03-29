@@ -45,17 +45,12 @@ shap_values = explainer.shap_values(entry_scaled)
 print("Anomaly score: ", anomaly_score(entry_scaled)[0])
 print(shap_values)
 
+tree_dumps = model.get_dump(with_stats=True)
 
 num_trees = len(tree_dumps)
 
-for i in range(25):
+for i in range(num_trees):
     tree_pred = model.predict(dmatrix_first, iteration_range=(i, i+1))
     print(f"Prediction from tree {i}: {tree_pred}")
 
-tree_dumps = model.get_dump(with_stats=True)
-##for idx, tree in enumerate(tree_dumps):
-  #  print(f"Tree {idx} structure:")
-   # print(tree)
-    #print("-" * 40)
 
-print(model.predict(dmatrix_first))

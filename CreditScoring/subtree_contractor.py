@@ -205,25 +205,3 @@ def listen_for_passout_events():
 if __name__ == "__main__":
     print("Listening for Pass Out Tree Events...")
     listen_for_passout_events()
-"""
-def listen_for_incoming_requests():
-    incoming_request_filter = w3.eth.filter({
-        "address": contract_address,
-        "topics": [w3.keccak(text="IncomingRequest(address,uint256[])").hex()]
-    })
-    
-    while True:
-        logs = w3.eth.get_filter_changes(incoming_request_filter.filter_id)
-        for log in logs:
-            sender = "0x" + log["topics"][1].hex()[-40:]
-            data_bytes = log["data"]
-            data = decode(["uint256[]"], data_bytes)[0]
-            
-            print(f"Sender: {sender}")
-            print("Values:", data)
-            post_filter_results(Web3.to_checksum_address(sender), True)
-            print("========")
-            
-        time.sleep(5)"
-		
-"""
