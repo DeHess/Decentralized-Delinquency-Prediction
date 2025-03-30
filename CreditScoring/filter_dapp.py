@@ -191,9 +191,12 @@ def listen_for_incoming_requests():
             sender = "0x" + log["topics"][1].hex()[-40:]
             data_bytes = log["data"]
             data = decode(["uint256[]"], data_bytes)[0]
-            
+            data_list = list(data)
+
+            data_list[0] = round(data[0] / 1e9, 7)
+            data_list[3] = round(data[3] / 1e9, 7)
             print(f"Sender: {sender}")
-            print("Values:", data)
+            print("Values:", data_list)
             send_pre_filter_results(Web3.to_checksum_address(sender), True)
             print("========")
             

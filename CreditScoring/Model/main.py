@@ -14,6 +14,9 @@ data = pd.read_csv("../Data/cs-test.csv")
 data = data.drop("SeriousDlqin2yrs" , axis=1)
 data = data.drop("Id" , axis=1)
 first_entry = data.iloc[0:1]
+print(data.columns)
+#print(first_entry)
+#print(type(first_entry))
 dmatrix_first = xgb.DMatrix(first_entry)
 
 #
@@ -23,7 +26,7 @@ entry_np = np.nan_to_num(entry_np, nan=0.0)
 entry_scaled = scaler.transform(entry_np)
 is_outlier = model_outlier.predict(entry_scaled)[0]
 # 1 true 0 false
-print(f"This data is an outlier: {is_outlier}")
+#print(f"This data is an outlier: {is_outlier}")
 
 
 shaptrain = pd.read_csv("../Data/cs-test.csv")
@@ -42,15 +45,15 @@ explainer = shap.KernelExplainer(anomaly_score, background)
 shap_values = explainer.shap_values(entry_scaled)
 
 
-print("Anomaly score: ", anomaly_score(entry_scaled)[0])
-print(shap_values)
+#print("Anomaly score: ", anomaly_score(entry_scaled)[0])
+#print(shap_values)
 
 tree_dumps = model.get_dump(with_stats=True)
 
 num_trees = len(tree_dumps)
-
+"""
 for i in range(num_trees):
     tree_pred = model.predict(dmatrix_first, iteration_range=(i, i+1))
     print(f"Prediction from tree {i}: {tree_pred}")
-
+"""
 

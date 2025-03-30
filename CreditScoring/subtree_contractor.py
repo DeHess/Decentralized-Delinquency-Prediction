@@ -2,6 +2,8 @@ import sys
 import time
 from web3 import Web3
 from eth_abi import decode
+import pandas as pd
+import xgboost as xgb
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -10,12 +12,13 @@ if not w3.is_connected():
     exit()
 
 if len(sys.argv) < 3:
-    print("Usage: python SmartContractAccess.py <contract_address> <private_key>")
+    print("Usage: python SmartContractAccess.py <private_key> <contract_address <contractor_id>")
     sys.exit(1)
 
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
+contractor_id = int(sys.argv[3])
 contract_abi =[
 	{
 		"inputs": [],
@@ -166,7 +169,8 @@ contract_abi =[
 
 
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
-
+model = xgb.Booster()
+model.load_model("Model/model.json")
 
 def post_subtree_results():
     transaction = contract.functions.writeSubTreeAnswer().build_transaction({
@@ -194,9 +198,17 @@ def listen_for_passout_events():
             sender = "0x" + log["topics"][1].hex()[-40:]
             data_bytes = log["data"]
             data = decode(["uint256[]"], data_bytes)[0]
-            
-            print(f"Sender: {sender}")
-            print("Values:", data)
+            data_list = list(data)
+            data_list[0] = round(data[0] / 1e9, 7)
+            data_list[3] = round(data[3] / 1e9, 7)
+            data_list = [data_list]
+            #print(f"Sender: {sender}")
+            #print("Values:", data_list)
+            columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
+            df = pd.DataFrame(data_list, columns=columns)
+            dmatrix_first = xgb.DMatrix(df)
+            tree_pred = model.predict(dmatrix_first, iteration_range=(contractor_id, contractor_id+1))
+            print(tree_pred)
             print("========")
 
         time.sleep(5)
