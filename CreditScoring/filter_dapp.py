@@ -1,7 +1,11 @@
 import sys
 import time
+import numpy as np
 from web3 import Web3
 from eth_abi import decode
+from joblib import load
+import pandas as pd
+import xgboost as xgb
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -13,6 +17,8 @@ if len(sys.argv) < 3:
     print("Usage: python SmartContractAccess.py <contract_address> <private_key>")
     sys.exit(1)
 
+scaler = model = load("Model/outlier_scaler.pkl")
+outlier_detection_model = load("Model/outlier_model.pkl")
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
@@ -195,9 +201,23 @@ def listen_for_incoming_requests():
 
             data_list[0] = round(data[0] / 1e9, 7)
             data_list[3] = round(data[3] / 1e9, 7)
+            data_list = [data_list]
+            print(data_list)
+            print(type(data_list))
+            columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
+            df = pd.DataFrame(data_list, columns=columns)
+            df = df.to_numpy()
+            df = np.nan_to_num(df, nan=0.0)
+            entry_scaled = scaler.transform(df)
+            is_outlier = outlier_detection_model.predict(entry_scaled)[0]
+            if is_outlier == 0:
+                send_pre_filter_results(Web3.to_checksum_address(sender), True)
+            else:
+                send_pre_filter_results(Web3.to_checksum_address(sender), False)
+
             print(f"Sender: {sender}")
             print("Values:", data_list)
-            send_pre_filter_results(Web3.to_checksum_address(sender), True)
+            print("Outlier?:", is_outlier)
             print("========")
             
         time.sleep(5)
