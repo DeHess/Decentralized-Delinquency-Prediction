@@ -48,13 +48,6 @@ contract_abi = [
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "makeCreditRequest",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
 		"anonymous": False,
 		"inputs": [
 			{
@@ -72,24 +65,6 @@ contract_abi = [
 		],
 		"name": "PassOutTree",
 		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "passed",
-				"type": "bool"
-			}
-		],
-		"name": "preFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"anonymous": False,
@@ -130,13 +105,6 @@ contract_abi = [
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "writeSubTreeAnswer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -156,15 +124,53 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getValue",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "uint16",
+				"name": "userId",
+				"type": "uint16"
 			}
 		],
+		"name": "makeCreditRequest",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "oracle",
+		"outputs": [
+			{
+				"internalType": "contract MockOracle",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			}
+		],
+		"name": "preFilterResult",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "writeSubTreeAnswer",
+		"outputs": [],
 		"stateMutability": "view",
 		"type": "function"
 	}
@@ -212,8 +218,8 @@ def listen_for_incoming_requests():
             is_outlier = outlier_detection_model.predict(entry_scaled)[0]
             if is_outlier == 0:
                 send_pre_filter_results(Web3.to_checksum_address(sender), True)
-            else:
-                send_pre_filter_results(Web3.to_checksum_address(sender), False)
+            else:						# TODO Once we are done testing: make this false
+                send_pre_filter_results(Web3.to_checksum_address(sender), True) 
 
             print(f"Sender: {sender}")
             print("Values:", data_list)

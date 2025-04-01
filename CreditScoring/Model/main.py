@@ -45,8 +45,8 @@ explainer = shap.KernelExplainer(anomaly_score, background)
 shap_values = explainer.shap_values(entry_scaled)
 
 
-#print("Anomaly score: ", anomaly_score(entry_scaled)[0])
-#print(shap_values)
+print("Anomaly score: ", anomaly_score(entry_scaled)[0])
+print(shap_values)
 
 tree_dumps = model.get_dump(with_stats=True)
 

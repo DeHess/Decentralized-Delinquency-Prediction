@@ -19,7 +19,7 @@ account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probab
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
 contractor_id = int(sys.argv[3])
-contract_abi =[
+contract_abi = [
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -36,16 +36,22 @@ contract_abi =[
 			},
 			{
 				"indexed": False,
-				"internalType": "uint256[]",
+				"internalType": "uint64[]",
 				"name": "heldData",
-				"type": "uint256[]"
+				"type": "uint64[]"
 			}
 		],
 		"name": "IncomingRequest",
 		"type": "event"
 	},
 	{
-		"inputs": [],
+		"inputs": [
+			{
+				"internalType": "uint16",
+				"name": "userId",
+				"type": "uint16"
+			}
+		],
 		"name": "makeCreditRequest",
 		"outputs": [],
 		"stateMutability": "payable",
@@ -62,9 +68,9 @@ contract_abi =[
 			},
 			{
 				"indexed": False,
-				"internalType": "uint256[]",
+				"internalType": "uint64[]",
 				"name": "heldData",
-				"type": "uint256[]"
+				"type": "uint64[]"
 			}
 		],
 		"name": "PassOutTree",
@@ -127,13 +133,6 @@ contract_abi =[
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "writeSubTreeAnswer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -154,19 +153,25 @@ contract_abi =[
 	},
 	{
 		"inputs": [],
-		"name": "getValue",
+		"name": "oracle",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "contract MockOracle",
 				"name": "",
-				"type": "uint256"
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "writeSubTreeAnswer",
+		"outputs": [],
+		"stateMutability": "view",
+		"type": "function"
 	}
 ]
-
 
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 model = xgb.Booster()
@@ -202,8 +207,6 @@ def listen_for_passout_events():
             data_list[0] = round(data[0] / 1e9, 7)
             data_list[3] = round(data[3] / 1e9, 7)
             data_list = [data_list]
-            #print(f"Sender: {sender}")
-            #print("Values:", data_list)
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
             dmatrix_first = xgb.DMatrix(df)
