@@ -1,22 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "hardhat/console.sol"; 
+import "./MockOracle.sol";
 
 contract CreditScorer {
-    //Id,SeriousDlqin2yrs,RevolvingUtilizationOfUnsecuredLines,age,NumberOfTime30-59DaysPastDueNotWorse,DebtRatio,MonthlyIncome,NumberOfOpenCreditLinesAndLoans,NumberOfTimes90DaysLate,NumberRealEstateLoansOrLines,NumberOfTime60-89DaysPastDueNotWorse,NumberOfDependents
-    //1,1,0.766126609,45,2,0.802982129,9120,13,0,6,0,2
-    uint256[] private testData = [1, 766126609, 45, 2, 802982129, 9120, 13, 0, 6, 0, 2];
+    MockOracle public oracle;
+    uint256[] private testData;
+    uint64 private oracleResult;
     address private admin;
     mapping(address => bool) public allowedAddresses;
 
 
     constructor() {
         admin = msg.sender; 
-        allowedAddresses[admin] = true; //The only allowed subtree contractor is the admin of the smart contract currently
+        oracle = new MockOracle();
+        allowedAddresses[admin] = true;
     }
-
-    // Mock Data
-    uint256 private value;
 
     event IncomingRequest(address indexed _addr, uint256[] heldData);
     event PassOutTree(address indexed _addr, uint256[] heldData);
@@ -24,7 +23,7 @@ contract CreditScorer {
     event RequestFail(address indexed _addr, string reason);
 
 
-    function makeCreditRequest() public payable {
+    function makeCreditRequest(uint16 userId) public payable {
         //require(msg.value >= requestPrice, "Insufficient payment to pay for rating service");       
         //(bool success, ) = admin.call{value: msg.value}("");
         //require(success, "Payment transfer to admin failed");
@@ -37,14 +36,14 @@ contract CreditScorer {
         //    emit RequestDenied(msg.sender, "Cooldown period not yet over");
         //}
 
-        //Enshrine using uint256[] memory dataArray in parameters, and saving the request data
-
+        testData = oracle.getUserData(userId);
+        oracleResult = oracle.getUserDelinquencyPrediction(userId);
         emit IncomingRequest(msg.sender, testData);
     }      
 
 
     // This method is called by the off-chain Filter-dApp
-    function postFilterResult(address requester, bool passed) public {
+    function preFilterResult(address requester, bool passed) public {
         require(msg.sender == admin, "Requires admin credentials");
         if (passed) {
             emit PassOutTree(msg.sender, testData);
@@ -53,21 +52,11 @@ contract CreditScorer {
         }
     }
 
-
-
-
-
-
     //This method is called by SubTreeContractors dApps
-    function writeSubTreeAnswer() public {
+    function writeSubTreeAnswer() public view {
         require(allowedAddresses[msg.sender], "This method can only be called by SubTreeContractor");
-        value = value + 1;
         //Write to the result map 
         //If Result Map is complete -> emit ANSWER WE ARE DONE
         //also make sure the result is on the blockchain
-    }
-
-    function getValue() public view returns (uint256) {
-        return value;
     }
 }
