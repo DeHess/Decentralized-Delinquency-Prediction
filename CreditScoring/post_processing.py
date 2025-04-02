@@ -11,10 +11,8 @@ def anomaly_score(model, entry):
 
 
     explainer = shap.TreeExplainer(model, data=background)
-
     shap_values = explainer.shap_values(entry)
-    print(f"This are the shap Values: {shap_values}")
-
+    
     def calculate_anomaly_score(instance_shap, background_shap_values):
         bg_means = np.mean(background_shap_values, axis=0)
         bg_stds = np.std(background_shap_values, axis=0)
@@ -26,8 +24,7 @@ def anomaly_score(model, entry):
 
     instance_shap = np.array(shap_values[0])
     background_shap_values = np.array(explainer.shap_values(background))
-
+ 
 
     anomaly_score = calculate_anomaly_score(instance_shap, background_shap_values)
-    print("Anomaly Score:", anomaly_score)
     return anomaly_score
