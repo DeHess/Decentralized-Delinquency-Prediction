@@ -6,6 +6,7 @@ from eth_abi import decode
 from joblib import load
 import pandas as pd
 import xgboost as xgb
+from post_processing import anomaly_score
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -17,8 +18,10 @@ if len(sys.argv) < 3:
     print("Usage: python SmartContractAccess.py <contract_address> <private_key>")
     sys.exit(1)
 
-scaler = model = load("Model/outlier_scaler.pkl")
+scaler = load("Model/outlier_scaler.pkl")
 outlier_detection_model = load("Model/outlier_model.pkl")
+model = xgb.XGBClassifier()
+model.load_model("Model/model.json")
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
@@ -64,6 +67,25 @@ contract_abi = [
 			}
 		],
 		"name": "PassOutTree",
+		"type": "event"
+	},
+	{
+		"anonymous": False,
+		"inputs": [
+			{
+				"indexed": False,
+				"internalType": "uint256[]",
+				"name": "heldData",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "risk",
+				"type": "uint256"
+			}
+		],
+		"name": "PostFilter",
 		"type": "event"
 	},
 	{
@@ -168,10 +190,16 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "risk",
+				"type": "uint256"
+			}
+		],
 		"name": "writeSubTreeAnswer",
 		"outputs": [],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]
@@ -208,8 +236,10 @@ def listen_for_incoming_requests():
             data_list[0] = round(data[0] / 1e9, 7)
             data_list[3] = round(data[3] / 1e9, 7)
             data_list = [data_list]
-            print(data_list)
-            print(type(data_list))
+            anomaly_score = anomaly_score(model, data_list)
+            print("ANOMALY SCORE:")
+            print(anomaly_score)
+
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
             df = df.to_numpy()
@@ -218,7 +248,7 @@ def listen_for_incoming_requests():
             is_outlier = outlier_detection_model.predict(entry_scaled)[0]
             if is_outlier == 0:
                 send_pre_filter_results(Web3.to_checksum_address(sender), True)
-            else:						# TODO Once we are done testing: make this false
+            else:						# TODO Once we are done testing: make this False
                 send_pre_filter_results(Web3.to_checksum_address(sender), True) 
 
             print(f"Sender: {sender}")

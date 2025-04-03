@@ -36,26 +36,13 @@ contract_abi = [
 			},
 			{
 				"indexed": False,
-				"internalType": "uint64[]",
+				"internalType": "uint256[]",
 				"name": "heldData",
-				"type": "uint64[]"
+				"type": "uint256[]"
 			}
 		],
 		"name": "IncomingRequest",
 		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint16",
-				"name": "userId",
-				"type": "uint16"
-			}
-		],
-		"name": "makeCreditRequest",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
 	},
 	{
 		"anonymous": False,
@@ -68,31 +55,32 @@ contract_abi = [
 			},
 			{
 				"indexed": False,
-				"internalType": "uint64[]",
+				"internalType": "uint256[]",
 				"name": "heldData",
-				"type": "uint64[]"
+				"type": "uint256[]"
 			}
 		],
 		"name": "PassOutTree",
 		"type": "event"
 	},
 	{
+		"anonymous": False,
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
+				"indexed": False,
+				"internalType": "uint256[]",
+				"name": "heldData",
+				"type": "uint256[]"
 			},
 			{
-				"internalType": "bool",
-				"name": "passed",
-				"type": "bool"
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "risk",
+				"type": "uint256"
 			}
 		],
-		"name": "preFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
+		"name": "PostFilter",
+		"type": "event"
 	},
 	{
 		"anonymous": False,
@@ -152,6 +140,19 @@ contract_abi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint16",
+				"name": "userId",
+				"type": "uint16"
+			}
+		],
+		"name": "makeCreditRequest",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "oracle",
 		"outputs": [
@@ -165,10 +166,34 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			}
+		],
+		"name": "preFilterResult",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "risk",
+				"type": "uint256"
+			}
+		],
 		"name": "writeSubTreeAnswer",
 		"outputs": [],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]
@@ -177,8 +202,8 @@ contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 model = xgb.Booster()
 model.load_model("Model/model.json")
 
-def post_subtree_results():
-    transaction = contract.functions.writeSubTreeAnswer().build_transaction({
+def post_subtree_results(result):
+    transaction = contract.functions.writeSubTreeAnswer(result).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -211,7 +236,8 @@ def listen_for_passout_events():
             df = pd.DataFrame(data_list, columns=columns)
             dmatrix_first = xgb.DMatrix(df)
             tree_pred = model.predict(dmatrix_first, iteration_range=(contractor_id, contractor_id+1))
-            print(tree_pred)
+            print(tree_pred[0])
+            post_subtree_results(int(tree_pred[0] * 10**7))
             print("========")
 
         time.sleep(5)
