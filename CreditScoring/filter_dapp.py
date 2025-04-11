@@ -6,7 +6,8 @@ from eth_abi import decode
 from joblib import load
 import pandas as pd
 import xgboost as xgb
-from post_processing import anomaly_score
+from post_processing import postprocess_prediction
+from pre_processing import pre_processing
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -22,6 +23,7 @@ scaler = load("Model/outlier_scaler.pkl")
 outlier_detection_model = load("Model/outlier_model.pkl")
 model = xgb.XGBClassifier()
 model.load_model("Model/model.json")
+
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
@@ -236,16 +238,24 @@ def listen_for_incoming_requests():
             data_list[0] = round(data[0] / 1e9, 7)
             data_list[3] = round(data[3] / 1e9, 7)
             data_list = [data_list]
-            anomaly_score = anomaly_score(model, data_list)
-            print("ANOMALY SCORE:")
-            print(anomaly_score)
 
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
-            df = df.to_numpy()
-            df = np.nan_to_num(df, nan=0.0)
-            entry_scaled = scaler.transform(df)
-            is_outlier = outlier_detection_model.predict(entry_scaled)[0]
+            # Preprocessing
+            is_outlier = pre_processing(df)
+
+
+            ##Post Processing
+            postproc_results = postprocess_prediction(
+            entry_df=df,
+            data_path="Data/cs-training.csv",
+            background_size=100,
+            positive_class=1,
+            random_state=42
+            )
+            
+            print(f"Post processing results {postproc_results}")
+            
             if is_outlier == 0:
                 send_pre_filter_results(Web3.to_checksum_address(sender), True)
             else:						# TODO Once we are done testing: make this False
