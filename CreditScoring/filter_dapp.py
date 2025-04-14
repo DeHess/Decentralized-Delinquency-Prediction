@@ -241,17 +241,16 @@ def listen_for_incoming_requests():
 
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
+            
             # Preprocessing
             is_outlier = pre_processing(df)
 
 
-            ##Post Processing
+            #Post Processing
             postproc_results = postprocess_prediction(
-            entry_df=df,
-            data_path="Data/cs-training.csv",
-            background_size=100,
-            positive_class=1,
-            random_state=42
+                booster=model,
+                entry_df=df,
+                prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
             )
             
             print(f"Post processing results {postproc_results}")
