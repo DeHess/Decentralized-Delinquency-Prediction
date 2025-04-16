@@ -20,13 +20,10 @@ def listen_for_incoming_requests(data):
 
     ##Post Processing
     postproc_results = postprocess_prediction(
-    booster=booster,
-    entry_df=df,
-    data_path="Data/cs-training.csv",
-    background_size=100,
-    positive_class=1,
-    random_state=42
-)
+                booster=model,
+                entry_df=df,
+                prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
+            )
     
     print(postproc_results)
 
