@@ -20,7 +20,7 @@ def listen_for_incoming_requests(data):
 
     ##Post Processing
     postproc_results = postprocess_prediction(
-                booster=model,
+                booster=booster,
                 entry_df=df,
                 prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
             )
