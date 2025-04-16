@@ -7,28 +7,53 @@ booster = xgb.Booster()
 booster.load_model("model.json")
 
 def listen_for_incoming_requests(data):
-    
     data_list = list(data)
-    columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
+    columns = [
+        'RevolvingUtilizationOfUnsecuredLines', 'age', 
+        'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 
+        'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 
+        'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 
+        'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents'
+    ]
     
     df = pd.DataFrame(data_list, columns=columns)
+    print("DataFrame:")
     print(df)
     
-    # Preprocessing
-    is_outlier = pre_processing(df)
 
-
-    ##Post Processing
-    postproc_results = postprocess_prediction(
-                booster=booster,
-                entry_df=df,
-                prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
-            )
+    outlier_flag = pre_processing(df)
     
+            
+    dmatrix = xgb.DMatrix(df)
+    prediction = booster.predict(dmatrix)
+    
+    if prediction > 0.4:
+        prediction = 1
+        
+    else: prediction = 0
+    
+    postproc_results = postprocess_prediction(
+        booster=booster,
+        entry_df=df,
+        predicted =  prediction
+    )
+    
+    anomaly_score = postproc_results["anomaly_score"]
+    
+    anomaly_threshold = 2
+    
+    if outlier_flag == 1 or anomaly_score > anomaly_threshold:
+        manipulation_status = "Manipulated (Bad)"
+    else:
+        manipulation_status = "Not Manipulated (Good)"
+    
+    print("Raw Values:", data_list)
+    print("Prediction", prediction)
+    print("Outlier Flag:", outlier_flag)
+    print("Anomaly Score:", anomaly_score)
+    print("Manipulation Status:", manipulation_status)
+    print("Post Processing Results:")
     print(postproc_results)
-
-    print("Values:", data_list)
-    print("Outlier?:", is_outlier)
     print("========")
     
 
