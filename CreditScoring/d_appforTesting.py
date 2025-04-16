@@ -4,7 +4,7 @@ from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
 booster = xgb.Booster()
-booster.load_model("model.json")
+booster.load_model("Model/model.json")
 
 def listen_for_incoming_requests(data):
     
@@ -22,7 +22,7 @@ def listen_for_incoming_requests(data):
     postproc_results = postprocess_prediction(
                 booster=booster,
                 entry_df=df,
-                prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
+                predicted = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
             )
     
     print(postproc_results)
