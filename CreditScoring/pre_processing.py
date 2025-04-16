@@ -2,8 +2,8 @@ import pandas as pd
 import joblib
 import numpy as np
 
-scaler = joblib.load("outlier_scaler.pkl")
-model_outlier = joblib.load("outlier_model.pkl")
+scaler = joblib.load("Model/outlier_scaler.pkl")
+model_outlier = joblib.load("Model/outlier_model.pkl")
 
 
 def pre_processing(datapoint):

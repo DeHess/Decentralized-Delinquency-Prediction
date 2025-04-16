@@ -4,7 +4,7 @@ from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
 booster = xgb.Booster()
-booster.load_model("model.json")
+booster.load_model("Model/model.json")
 
 def listen_for_incoming_requests(data):
     data_list = list(data)
