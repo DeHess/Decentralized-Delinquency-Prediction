@@ -6,7 +6,7 @@ from post_processing import postprocess_prediction
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
 
-def listen_for_incoming_requests(data):
+def test(data):
     data_list = list(data)
     columns = [
         'RevolvingUtilizationOfUnsecuredLines', 'age', 
@@ -26,7 +26,7 @@ def listen_for_incoming_requests(data):
             
     dmatrix = xgb.DMatrix(df)
     prediction = booster.predict(dmatrix)
-    
+    pred_score = prediction
     if prediction > 0.4:
         prediction = 1
         
@@ -48,17 +48,17 @@ def listen_for_incoming_requests(data):
         manipulation_status = "Not Manipulated (Good)"
     
     print("Raw Values:", data_list)
+    print("Exact Prediction", pred_score)
     print("Prediction", prediction)
     print("Outlier Flag:", outlier_flag)
     print("Anomaly Score:", anomaly_score)
     print("Manipulation Status:", manipulation_status)
-    print("Post Processing Results:")
-    print(postproc_results)
+    #print("Post Processing Results:")
+    #print(postproc_results)
     print("========")
     
-
-if __name__ == "__main__":
-    data = [
-        [0.983824929, 55, 0, 0.064116496, 4600, 2, 1, 0, 0, 6]
-    ]
-    listen_for_incoming_requests(data)
+#0.964672555,40,3,0.382964747,13700,9,3,1,1,2
+data = [
+    [0.964672555,40,3,0.382964747,13700,9,3,1,1,2]
+]
+test(data)
