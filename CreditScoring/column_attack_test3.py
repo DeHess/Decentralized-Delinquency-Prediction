@@ -6,12 +6,10 @@ import numpy as np
 from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
-# Load model
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
 
-# Test function
-def get_score(data):
+def get_prediction_score(data):
     data_list = list(data)
     columns = [
         'RevolvingUtilizationOfUnsecuredLines', 'age', 
@@ -25,20 +23,24 @@ def get_score(data):
     score = booster.predict(dmatrix)[0]
     return score
 
-def get_anomaly_score(prediction, dataframe):
+def get_scores(data):
+    score = get_prediction_score(data)
+    prediction = 1 if score > 0.4 else 0
     postproc_results = postprocess_prediction(
         booster=booster,
-        entry_df=dataframe,
+        entry_df=df,
         predicted=prediction
     )
-    
     anomaly_score = postproc_results.get("anomaly_score", 0)
-    return anomaly_score
 
+    return score, anomaly_score
 
-# Define value ranges
+def get_values_around(val, radius, min_val, max_val, step=1):
+    values = list(range(max(val - radius, min_val), min(val + radius + 1, max_val + 1), step))
+    return values
+
 value_ranges = {
-    'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)),
+    'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)), #TODO instead of doing ranges 0-21, do a radius around these. For example: if original point has a 5 in this feature, try 3,4,6,7. Same for all other features
     'NumberOfTime60-89DaysPastDueNotWorse': list(range(21)),
     'NumberOfTimes90DaysLate': list(range(21)),
     'age': list(range(18, 101)),
@@ -50,12 +52,13 @@ value_ranges = {
     'NumberRealEstateLoansOrLines': list(range(11)),
 }
 
-# Load data
+
 df = pd.read_csv("Data/high_score_predictions.csv")
 
-# Get original scores
-scores = df.apply(lambda row: get_score(row), axis=1)
-# TODO Also calculate anomaly scores for each point in variable anomaly_scores
+results = df.apply(lambda row: get_scores(row), axis=1)
+scores = results.apply(lambda x: x[0])       
+anomaly_scores = results.apply(lambda x: x[1])  
+
 manipulated_scores = pd.DataFrame(index=df.index, columns=value_ranges.keys())
 improvements = {col: [] for col in value_ranges.keys()}
 
@@ -69,7 +72,7 @@ for i, row in df.iterrows():
         for val in values:
             modified_row = row.copy()
             modified_row[column] = val
-            score = get_score(modified_row)
+            score = get_prediction_score(modified_row)
             if score < min_score:
                 min_score = score
         manipulated_scores.loc[i, column] = min_score
