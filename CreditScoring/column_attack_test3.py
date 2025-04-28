@@ -40,7 +40,7 @@ def get_values_around(val, radius, min_val, max_val, step=1):
     return values
 
 value_ranges = {
-    'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)), #TODO instead of doing ranges 0-21, do a radius around these. For example: if original point has a 5 in this feature, try 3,4,6,7. Same for all other features
+    'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)), 
     'NumberOfTime60-89DaysPastDueNotWorse': list(range(21)),
     'NumberOfTimes90DaysLate': list(range(21)),
     'age': list(range(18, 101)),
@@ -52,7 +52,6 @@ value_ranges = {
     'NumberRealEstateLoansOrLines': list(range(11)),
 }
 
-
 df = pd.read_csv("Data/high_score_predictions.csv")
 
 results = df.apply(lambda row: get_scores(row), axis=1)
@@ -62,31 +61,26 @@ anomaly_scores = results.apply(lambda x: x[1])
 manipulated_scores = pd.DataFrame(index=df.index, columns=value_ranges.keys())
 improvements = {col: [] for col in value_ranges.keys()}
 
-# Manipulate each feature
-# TODO Only manipulate around the feature in a "radius" of +T, and -T is passed as a commandline param
 for i, row in df.iterrows():
     original_score = scores[i]
-    
+    # TODO instead of going through ranges 0-X, test in a 5% range around the datapoint in 1% intervals
     for column, values in value_ranges.items():
         min_score = original_score
         for val in values:
             modified_row = row.copy()
             modified_row[column] = val
             score = get_prediction_score(modified_row)
+            
             if score < min_score:
                 min_score = score
         manipulated_scores.loc[i, column] = min_score
         
-        # Record improvements
         if min_score < original_score:
             improvement = original_score - min_score
             improvements[column].append(improvement)
-        
-        # TODO Once optimal score in Range has been found (lowest score), calculate anomaly score of the manipuated point
-        
-# TODO I need a second plot for increase of anomaly score for each feature
+    
 
-# Also print average improvement and std deviation
+
 for column in value_ranges:
     if improvements[column]:
         avg_improvement = np.mean(improvements[column])
