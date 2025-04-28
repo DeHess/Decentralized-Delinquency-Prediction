@@ -55,7 +55,8 @@ def postprocess_prediction(
     mean_bg_shap = np.mean(bg_shap_vals, axis=0)
     
     anomaly_score_m = mahalanobis(instance_shap, mean_bg_shap, inv_cov_matrix)
-    anomaly_score = (anomaly_score_z + anomaly_score_m) / 2
+    anomaly_score = (anomaly_score_z + anomaly_score_m) / 2 #TODO
+    
     
     abs_bg_shap_vals = np.abs(bg_shap_vals)
     mean_abs_shap = np.mean(abs_bg_shap_vals, axis=0)

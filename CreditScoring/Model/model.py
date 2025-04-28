@@ -2,11 +2,10 @@ import pandas as pd
 import xgboost as xgb
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, roc_auc_score
 
-traindata = pd.read_csv("../Data/cs-training.csv")
-
-X = traindata.drop("SeriousDlqin2yrs", axis=1)
-X = X.drop("Id", axis= 1)
+traindata = pd.read_csv("Data/cs-training.csv")
+X = traindata.drop(["SeriousDlqin2yrs", "Id"], axis=1)
 y = traindata["SeriousDlqin2yrs"]
 
 
@@ -18,6 +17,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 
+ratio = (y_train == 0).sum() / (y_train == 1).sum()
+print("Calculated scale_pos_weight:", ratio)
+
+
 best_params = {
     "learning_rate": 0.02915,         
     "max_depth": 5,               
@@ -26,16 +29,14 @@ best_params = {
     "colsample_bytree": 0.8,    
     "objective": "binary:logistic", 
     "n_estimators": 261,
-    "eval_metric": 'error',    
+    "eval_metric": "auc",   
     "lambda": 0.5,
-    "scale_pos_weight": 0.757,
+    "scale_pos_weight": ratio,  
     "updater": "grow_quantile_histmaker",
     "grow_policy": "lossguide"
 }
 
 model = xgb.XGBClassifier(**best_params)
-
-evals_result = {}
 model.fit(
     X_train, 
     y_train,
@@ -43,18 +44,18 @@ model.fit(
     verbose=False
 )
 
-evals_result = model.evals_result()
+pred_probs = model.predict_proba(X_test)[:, 1]
+default_preds = (pred_probs >= 0.5).astype(int)
+print("Classification Report (Default 0.5 threshold):")
+print(classification_report(y_test, default_preds))
 
-train_errors = evals_result["validation_0"]["error"]
-test_errors  = evals_result["validation_1"]["error"]
+threshold = 0.4
+adjusted_preds = (pred_probs >= threshold).astype(int)
+print("Classification Report (Adjusted threshold of 0.4):")
+print(classification_report(y_test, adjusted_preds))
 
-min_test_error = min(test_errors)
-best_epoch = test_errors.index(min_test_error)
-
-for epoch, error in enumerate(test_errors):
-    print(f"Epoch {epoch+1}: Test Error = {error}")
-
-print(f"\nLowest Test Error: {min_test_error} at Epoch {best_epoch + 1}")
+auc_score = roc_auc_score(y_test, pred_probs)
+print(f"AUC Score: {auc_score:.4f}")
 
 model.save_model("model.json")
 
