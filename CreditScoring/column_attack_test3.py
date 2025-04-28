@@ -35,11 +35,8 @@ def get_scores(data):
 
     return score, anomaly_score
 
-def get_values_around(val, radius, min_val, max_val, step=1):
-    values = list(range(max(val - radius, min_val), min(val + radius + 1, max_val + 1), step))
-    return values
-
-value_ranges = {
+radius = 5
+value_ranges = { # THIS Must probably be changed...
     'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)), 
     'NumberOfTime60-89DaysPastDueNotWorse': list(range(21)),
     'NumberOfTimes90DaysLate': list(range(21)),
@@ -51,6 +48,8 @@ value_ranges = {
     'NumberOfOpenCreditLinesAndLoans': list(range(31)),
     'NumberRealEstateLoansOrLines': list(range(11)),
 }
+
+
 
 df = pd.read_csv("Data/high_score_predictions.csv")
 
@@ -64,17 +63,28 @@ improvements = {col: [] for col in value_ranges.keys()}
 for i, row in df.iterrows():
     original_score = scores[i]
     # TODO instead of going through ranges 0-X, test in a 5% range around the datapoint in 1% intervals
-    for column, values in value_ranges.items():
+    
+    
+for i, row in df.iterrows():
+    original_score = scores[i]
+
+    for column, _ in value_ranges.items():
+        original_value = row[column]
+        # Define a range around the original value
+        lower_bound = max(original_value * 0.95, 0)  # Ensure non-negative range
+        upper_bound = original_value * 1.05
+        values_to_test = np.linspace(lower_bound, upper_bound, num=21)  # 1% intervals
+
         min_score = original_score
-        for val in values:
+        for val in values_to_test:
             modified_row = row.copy()
             modified_row[column] = val
             score = get_prediction_score(modified_row)
             
             if score < min_score:
                 min_score = score
+
         manipulated_scores.loc[i, column] = min_score
-        
         if min_score < original_score:
             improvement = original_score - min_score
             improvements[column].append(improvement)
