@@ -6,6 +6,10 @@ import numpy as np
 from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
+
+PERCENTAGE_RANGE = 0.05  
+
+
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
 
@@ -62,17 +66,15 @@ improvements = {col: [] for col in value_ranges.keys()}
 
 for i, row in df.iterrows():
     original_score = scores[i]
-    # TODO instead of going through ranges 0-X, test in a 5% range around the datapoint in 1% intervals
-    
     
 for i, row in df.iterrows():
     original_score = scores[i]
 
     for column, _ in value_ranges.items():
         original_value = row[column]
-        # Define a range around the original value
-        lower_bound = max(original_value * 0.95, 0)  # Ensure non-negative range
-        upper_bound = original_value * 1.05
+        # Define a range around the original value using the percentage variable
+        lower_bound = max(original_value * (1 - PERCENTAGE_RANGE), 0)  # Ensure non-negative range
+        upper_bound = original_value * (1 + PERCENTAGE_RANGE)
         values_to_test = np.linspace(lower_bound, upper_bound, num=21)  # 1% intervals
 
         min_score = original_score
@@ -88,6 +90,7 @@ for i, row in df.iterrows():
         if min_score < original_score:
             improvement = original_score - min_score
             improvements[column].append(improvement)
+
     
 
 
