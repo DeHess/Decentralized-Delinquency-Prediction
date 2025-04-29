@@ -177,8 +177,13 @@ contract_abi = [
 			},
 			{
 				"internalType": "bool",
-				"name": "passed",
+				"name": "isOutlier",
 				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "anomalyScore",
+				"type": "uint256"
 			}
 		],
 		"name": "auditResults",
@@ -236,8 +241,8 @@ contract_abi = [
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def send_scores(sender, passed):
-    transaction = contract.functions.auditResults(sender, passed).build_transaction({
+def send_scores(sender, is_outlier, score):
+    transaction = contract.functions.auditResults(sender, is_outlier, score).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -271,7 +276,7 @@ def listen_for_incoming_audit_requests():
             df = pd.DataFrame(data_list, columns=columns)
             
             # Preprocessing
-            is_outlier = pre_processing(df)
+            is_outlier = bool(pre_processing(df))
 
 			# Postprocessing
             score, anomaly_score = get_scores(df)
@@ -279,11 +284,8 @@ def listen_for_incoming_audit_requests():
             print("Outlier?: ", is_outlier)
             print(f"Score: ", score)
             print("Anomaly Score", anomaly_score)
-            
-            if is_outlier == 0:
-                send_scores(Web3.to_checksum_address(sender), True)
-            else:						# TODO Once we are done testing: make this False
-                send_scores(Web3.to_checksum_address(sender), True) 
+            send_scores(Web3.to_checksum_address(sender), is_outlier, int(score))
+
 
             print(f"Sender: {sender}")
             print("Values:", data_list)

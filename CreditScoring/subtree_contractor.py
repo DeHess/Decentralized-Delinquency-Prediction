@@ -135,8 +135,13 @@ contract_abi = [
 			},
 			{
 				"internalType": "bool",
-				"name": "passed",
+				"name": "isOutlier",
 				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "anomalyScore",
+				"type": "uint256"
 			}
 		],
 		"name": "auditResults",
