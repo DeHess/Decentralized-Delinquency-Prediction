@@ -11,6 +11,40 @@ from pre_processing import pre_processing
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
+# Load the model
+booster = xgb.Booster()
+booster.load_model("Model/model.json")
+
+def convert_to_dataframe(data):
+    data_list = list(data)
+    columns = [
+        'RevolvingUtilizationOfUnsecuredLines', 'age',
+        'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio',
+        'MonthlyIncome','NumberOfOpenCreditLinesAndLoans',
+        'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines',
+        'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents'
+    ]
+    return pd.DataFrame([data_list], columns=columns)
+
+def get_prediction_score(df):
+    dmatrix = xgb.DMatrix(df)
+    score = booster.predict(dmatrix)[0]
+    return score
+
+def get_scores(df):
+    score = get_prediction_score(df)
+    prediction = 1 if score > 0.4 else 0
+    postproc_results = postprocess_prediction(
+        booster=booster,
+        entry_df=df,
+        predicted=prediction
+    )
+    anomaly_score = postproc_results.get("anomaly_score", 0)
+    return score, anomaly_score
+
+
+
+
 if not w3.is_connected():
     print("Connection failed!")
     exit()
@@ -69,25 +103,6 @@ contract_abi = [
 			}
 		],
 		"name": "PassOutTree",
-		"type": "event"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": False,
-				"internalType": "uint256[]",
-				"name": "heldData",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256",
-				"name": "risk",
-				"type": "uint256"
-			}
-		],
-		"name": "PostFilter",
 		"type": "event"
 	},
 	{
@@ -192,16 +207,10 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "risk",
-				"type": "uint256"
-			}
-		],
+		"inputs": [],
 		"name": "writeSubTreeAnswer",
 		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	}
 ]
@@ -209,7 +218,7 @@ contract_abi = [
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def send_pre_filter_results(sender, passed):
+def send_scores(sender, passed):
     transaction = contract.functions.preFilterResult(sender, passed).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
@@ -229,6 +238,7 @@ def listen_for_incoming_requests():
     
     while True:
         logs = w3.eth.get_filter_changes(incoming_request_filter.filter_id)
+        
         for log in logs:
             sender = "0x" + log["topics"][1].hex()[-40:]
             data_bytes = log["data"]
@@ -245,24 +255,19 @@ def listen_for_incoming_requests():
             # Preprocessing
             is_outlier = pre_processing(df)
 
-
-            #Post Processing
-            postproc_results = postprocess_prediction(
-                booster=model,
-                entry_df=df,
-                prediction = 1 #Prediction aus dem Model TODO: Das die Model prediction genommen wird und nicht 1 
-            )
-            
-            print(f"Post processing results {postproc_results}")
+			# Postprocessing
+            score, anomaly_score = get_scores(df)
+            print("Outlier?: ", is_outlier)
+            print(f"Score: ", score)
+            print("Anomaly Score", anomaly_score)
             
             if is_outlier == 0:
-                send_pre_filter_results(Web3.to_checksum_address(sender), True)
+                send_scores(Web3.to_checksum_address(sender), True)
             else:						# TODO Once we are done testing: make this False
-                send_pre_filter_results(Web3.to_checksum_address(sender), True) 
+                send_scores(Web3.to_checksum_address(sender), True) 
 
             print(f"Sender: {sender}")
             print("Values:", data_list)
-            print("Outlier?:", is_outlier)
             print("========")
             
         time.sleep(5)
