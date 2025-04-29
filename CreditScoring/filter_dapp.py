@@ -81,6 +81,12 @@ contract_abi = [
 				"internalType": "uint256[]",
 				"name": "heldData",
 				"type": "uint256[]"
+			},
+			{
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "prediction",
+				"type": "uint256"
 			}
 		],
 		"name": "IncomingRequest",
@@ -233,7 +239,7 @@ def send_scores(sender, passed):
 def listen_for_incoming_requests():
     incoming_request_filter = w3.eth.filter({
         "address": contract_address,
-        "topics": [w3.keccak(text="IncomingRequest(address,uint256[])").hex()]
+        "topics": [w3.keccak(text="IncomingRequest(address,uint256[],uint256)").hex()]
     })
     
     while True:
@@ -242,7 +248,7 @@ def listen_for_incoming_requests():
         for log in logs:
             sender = "0x" + log["topics"][1].hex()[-40:]
             data_bytes = log["data"]
-            data = decode(["uint256[]"], data_bytes)[0]
+            data, prediction = decode(["uint256[]", "uint256"], data_bytes)
             data_list = list(data)
 
             data_list[0] = round(data[0] / 1e9, 7)
@@ -257,6 +263,7 @@ def listen_for_incoming_requests():
 
 			# Postprocessing
             score, anomaly_score = get_scores(df)
+            print(prediction)
             print("Outlier?: ", is_outlier)
             print(f"Score: ", score)
             print("Anomaly Score", anomaly_score)

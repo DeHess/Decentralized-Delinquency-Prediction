@@ -17,7 +17,7 @@ contract CreditScorer {
         allowedAddresses[admin] = true;
     }
 
-    event IncomingRequest(address indexed _addr, uint256[] heldData);
+    event IncomingRequest(address indexed _addr, uint256[] heldData, uint256 prediction);
     event PassOutTree(address indexed _addr, uint256[] heldData);
     event RequestDenied(address indexed _addr, string reason);
     event RequestFail(address indexed _addr, string reason);
@@ -38,7 +38,7 @@ contract CreditScorer {
 
         testData = oracle.getUserData(userId);
         oracleResult = oracle.getUserDelinquencyPrediction(userId);
-        emit IncomingRequest(msg.sender, testData);
+        emit IncomingRequest(msg.sender, testData, 1);
     }      
 
 
@@ -55,6 +55,7 @@ contract CreditScorer {
     //This method is called by SubTreeContractors dApps
     function writeSubTreeAnswer() public view {
         require(allowedAddresses[msg.sender], "This method can only be called by SubTreeContractor");
+
         //Write to the result map 
         //If Result Map is complete -> emit ANSWER WE ARE DONE
         //also make sure the result is on the blockchain
