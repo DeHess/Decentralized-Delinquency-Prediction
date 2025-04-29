@@ -229,7 +229,7 @@ contract_abi = [
 		"inputs": [],
 		"name": "writeSubTreeAnswer",
 		"outputs": [],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

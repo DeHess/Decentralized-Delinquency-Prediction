@@ -39,9 +39,15 @@ contract_abi = [
 				"internalType": "uint256[]",
 				"name": "heldData",
 				"type": "uint256[]"
+			},
+			{
+				"indexed": False,
+				"internalType": "uint256",
+				"name": "prediction",
+				"type": "uint256"
 			}
 		],
-		"name": "IncomingRequest",
+		"name": "AnomalyAudit",
 		"type": "event"
 	},
 	{
@@ -61,25 +67,6 @@ contract_abi = [
 			}
 		],
 		"name": "PassOutTree",
-		"type": "event"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": False,
-				"internalType": "uint256[]",
-				"name": "heldData",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256",
-				"name": "risk",
-				"type": "uint256"
-			}
-		],
-		"name": "PostFilter",
 		"type": "event"
 	},
 	{
@@ -142,6 +129,24 @@ contract_abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			}
+		],
+		"name": "auditResults",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint16",
 				"name": "userId",
 				"type": "uint16"
@@ -166,31 +171,20 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "testValue",
+		"outputs": [
 			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "passed",
-				"type": "bool"
+				"internalType": "uint16",
+				"name": "",
+				"type": "uint16"
 			}
 		],
-		"name": "preFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "risk",
-				"type": "uint256"
-			}
-		],
+		"inputs": [],
 		"name": "writeSubTreeAnswer",
 		"outputs": [],
 		"stateMutability": "nonpayable",
@@ -203,7 +197,7 @@ model = xgb.Booster()
 model.load_model("Model/model.json")
 
 def post_subtree_results(result):
-    transaction = contract.functions.writeSubTreeAnswer(result).build_transaction({
+    transaction = contract.functions.writeSubTreeAnswer().build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
