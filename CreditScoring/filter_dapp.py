@@ -89,7 +89,7 @@ contract_abi = [
 				"type": "uint256"
 			}
 		],
-		"name": "IncomingRequest",
+		"name": "AnomalyAudit",
 		"type": "event"
 	},
 	{
@@ -171,6 +171,24 @@ contract_abi = [
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "passed",
+				"type": "bool"
+			}
+		],
+		"name": "auditResults",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint16",
 				"name": "userId",
 				"type": "uint16"
@@ -195,21 +213,16 @@ contract_abi = [
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "testValue",
+		"outputs": [
 			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "passed",
-				"type": "bool"
+				"internalType": "uint16",
+				"name": "",
+				"type": "uint16"
 			}
 		],
-		"name": "preFilterResult",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -220,12 +233,11 @@ contract_abi = [
 		"type": "function"
 	}
 ]
-
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
 def send_scores(sender, passed):
-    transaction = contract.functions.preFilterResult(sender, passed).build_transaction({
+    transaction = contract.functions.auditResults(sender, passed).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -236,10 +248,10 @@ def send_scores(sender, passed):
     print(f"Transaction sent successfully with hash: {txn_hash.hex()}")
 
 
-def listen_for_incoming_requests():
+def listen_for_incoming_audit_requests():
     incoming_request_filter = w3.eth.filter({
         "address": contract_address,
-        "topics": [w3.keccak(text="IncomingRequest(address,uint256[],uint256)").hex()]
+        "topics": [w3.keccak(text="AnomalyAudit(address,uint256[],uint256)").hex()]
     })
     
     while True:
@@ -281,7 +293,7 @@ def listen_for_incoming_requests():
        
 if __name__ == "__main__":
     print("Listening for Requests...")
-    listen_for_incoming_requests()
+    listen_for_incoming_audit_requests()
 
 
 
