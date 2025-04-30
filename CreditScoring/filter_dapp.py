@@ -283,7 +283,7 @@ def listen_for_incoming_audit_requests():
             print(prediction)
             print("Outlier?: ", is_outlier)
             print(f"Score: ", score)
-            print("Anomaly Score", anomaly_score)
+            print("Anomaly Score", anomaly_score)						# TODO Fix the Floats
             send_scores(Web3.to_checksum_address(sender), is_outlier, int(score))
 
 
