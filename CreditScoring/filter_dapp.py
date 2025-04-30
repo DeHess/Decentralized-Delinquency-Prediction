@@ -8,6 +8,7 @@ import pandas as pd
 import xgboost as xgb
 from post_processing import postprocess_prediction
 from pre_processing import pre_processing
+import json
 
 w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
@@ -25,6 +26,13 @@ def convert_to_dataframe(data):
         'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents'
     ]
     return pd.DataFrame([data_list], columns=columns)
+
+# Smart Contract can't do floats so here we go.
+def convert_to_float(val):
+    return float(f"0.{int(val):09d}")
+
+def convert_to_int(val):
+    return int(round(val * 1_000_000_000_0))
 
 def get_prediction_score(df):
     dmatrix = xgb.DMatrix(df)
@@ -61,183 +69,10 @@ model.load_model("Model/model.json")
 account = w3.eth.accounts[0] #TODO this has to be the admin SPECIFICALLY (probably also commandline argument)
 private_key = sys.argv[1]
 contract_address = sys.argv[2] 
-contract_abi = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": True,
-				"internalType": "address",
-				"name": "_addr",
-				"type": "address"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256[]",
-				"name": "heldData",
-				"type": "uint256[]"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256",
-				"name": "prediction",
-				"type": "uint256"
-			}
-		],
-		"name": "AnomalyAudit",
-		"type": "event"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": True,
-				"internalType": "address",
-				"name": "_addr",
-				"type": "address"
-			},
-			{
-				"indexed": False,
-				"internalType": "uint256[]",
-				"name": "heldData",
-				"type": "uint256[]"
-			}
-		],
-		"name": "PassOutTree",
-		"type": "event"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": True,
-				"internalType": "address",
-				"name": "_addr",
-				"type": "address"
-			},
-			{
-				"indexed": False,
-				"internalType": "string",
-				"name": "reason",
-				"type": "string"
-			}
-		],
-		"name": "RequestDenied",
-		"type": "event"
-	},
-	{
-		"anonymous": False,
-		"inputs": [
-			{
-				"indexed": True,
-				"internalType": "address",
-				"name": "_addr",
-				"type": "address"
-			},
-			{
-				"indexed": False,
-				"internalType": "string",
-				"name": "reason",
-				"type": "string"
-			}
-		],
-		"name": "RequestFail",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "allowedAddresses",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "requester",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "isOutlier",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "anomalyScore",
-				"type": "uint256"
-			}
-		],
-		"name": "auditResults",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint16",
-				"name": "userId",
-				"type": "uint16"
-			}
-		],
-		"name": "makeCreditRequest",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "oracle",
-		"outputs": [
-			{
-				"internalType": "contract MockOracle",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "testValue",
-		"outputs": [
-			{
-				"internalType": "uint16",
-				"name": "",
-				"type": "uint16"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "writeSubTreeAnswer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	}
-]
+
+with open('contract_abi.json', 'r') as abi_file:
+    contract_abi = json.load(abi_file)
+
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
@@ -268,8 +103,8 @@ def listen_for_incoming_audit_requests():
             data, prediction = decode(["uint256[]", "uint256"], data_bytes)
             data_list = list(data)
 
-            data_list[0] = round(data[0] / 1e9, 7)
-            data_list[3] = round(data[3] / 1e9, 7)
+            data_list[0] = convert_to_float(data[0])
+            data_list[3] = convert_to_float(data[3])
             data_list = [data_list]
 
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
@@ -280,11 +115,11 @@ def listen_for_incoming_audit_requests():
 
 			# Postprocessing
             score, anomaly_score = get_scores(df)
-            print(prediction)
+            print(convert_to_float(prediction))
             print("Outlier?: ", is_outlier)
             print(f"Score: ", score)
-            print("Anomaly Score", anomaly_score)						# TODO Fix the Floats
-            send_scores(Web3.to_checksum_address(sender), is_outlier, int(score))
+            print("Anomaly Score", anomaly_score)						
+            send_scores(Web3.to_checksum_address(sender), is_outlier, convert_to_int(anomaly_score))
 
 
             print(f"Sender: {sender}")
