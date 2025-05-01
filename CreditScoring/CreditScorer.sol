@@ -4,32 +4,48 @@ import "hardhat/console.sol";
 import "./MockOracle.sol";
 
 contract CreditScorer {
+    
+    
+    // === Infrastructure, Ownership ===
     MockOracle public oracle;
     address private admin;
     address[] public contractorList;
 
+    // === Volatile Variables
     uint256[] private testData;
     uint64 private oraclePrediction;
-
-    // Track contractor submissions
+    address public currentRequester;
     mapping(address => bool) public hasSubmitted;
     uint256 public submissionCount;
-
-    // Store all contractor predictions
     mapping(address => uint256) public contractorPredictions;
 
-    //Test variables so I dont have to write another dApp
+    // == For Dev ===
     bool public ourOutlier;
     uint256 public ourPrediction;
     uint256 public ourAnomalyScore;
 
-    //Contractors need to be accountable, save all their predictions 
+    // === Accountability, "Receipts" ===
     struct ContractorSubmission {
         address contractor;
+        address requester;
         uint256 prediction;
         uint256 timestamp;
     }
+    struct AuditResult {
+        address requester;
+        uint256 prediction;
+        bool isOutlier;
+        uint256 anomalyScore;
+        uint256 timestamp;
+    }
     mapping(address => ContractorSubmission) public contractorSubmissions;
+    mapping(address => AuditResult[]) public auditReceipts;
+
+
+    // === Events ===
+    event AnomalyAudit(address indexed _addr, uint256[] heldData, uint256 prediction);
+    event PostAuditResults(address indexed _addr, uint256 prediction, bool outlier, uint256 anomalyScore);
+    event PassOutTree(address indexed _addr, uint256[] heldData);
 
     constructor() {
         admin = msg.sender;
@@ -37,16 +53,11 @@ contract CreditScorer {
         contractorList.push(admin);
     }
 
-    event AnomalyAudit(address indexed _addr, uint256[] heldData, uint256 prediction);
-    event PostAuditResults(address indexed _addr, uint256 prediction, bool outlier, uint256 anomalyScore);
-    event PassOutTree(address indexed _addr, uint256[] heldData);
-    event RequestDenied(address indexed _addr, string reason);
-    event RequestFail(address indexed _addr, string reason);
-
 
     //============ User Function / Entry Point ============
     function makeCreditRequest(uint16 userId) public payable {
         resetSubmissions(); //TODO Re-Entry Attack vector, Solution: lock
+        currentRequester = msg.sender;
         testData = oracle.getUserData(userId);
         oraclePrediction = oracle.getUserDelinquencyPrediction(userId);
         emit PassOutTree(msg.sender, testData);
@@ -62,14 +73,18 @@ contract CreditScorer {
         submissionCount++;
 
         contractorSubmissions[msg.sender] = ContractorSubmission({
+            requester: currentRequester,
             contractor: msg.sender,
             prediction: prediction,
             timestamp: block.timestamp
         });
 
+        contractorPredictions[msg.sender] = prediction; 
+
         //TODO Denial of Service vector, rogue subtree contractor not giving an answer
         if (submissionCount == contractorList.length) {
             uint256 finalisedPrediction = finalizeSubmissions();
+            
             emit AnomalyAudit(msg.sender, testData, finalisedPrediction);
         } 
     }
@@ -81,7 +96,15 @@ contract CreditScorer {
 
         ourAnomalyScore = anomalyScore;
         ourOutlier = isOutlier;
-   
+
+        auditReceipts[requester].push(AuditResult({
+            requester: requester,
+            prediction: ourPrediction,
+            isOutlier: isOutlier,
+            anomalyScore: anomalyScore,
+            timestamp: block.timestamp
+        }));
+
         emit PostAuditResults(requester, ourPrediction, isOutlier, anomalyScore);
     }
 
@@ -94,14 +117,16 @@ contract CreditScorer {
         submissionCount = 0;
     }
 
-    function finalizeSubmissions() view internal returns (uint256) {
+    function finalizeSubmissions() internal returns (uint256) {
         uint256 sum = 0;
         uint256 count = contractorList.length;
         for (uint i = 0; i < count; i++) {
             sum += contractorPredictions[contractorList[i]];
         }
         require(count > 0, "No contractor submissions"); 
-        return sum / count;
+        uint256 pred = sum / count;
+        ourPrediction = pred;
+        return pred;
     }
 
     function isAllowedContractor(address addr) internal view returns (bool) {
