@@ -76,6 +76,5 @@ def listen_for_passout_events():
 
        
 if __name__ == "__main__":
-    print(str(g))
     print("Listening for Pass Out Tree Events...")
     listen_for_passout_events()
