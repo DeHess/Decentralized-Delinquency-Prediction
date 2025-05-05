@@ -11,7 +11,7 @@ contract CreditScorer {
     address[] public contractorList;
 
     // === Volatile Variables
-    uint256[] private testData;
+    uint256[] private secondaryData;
     uint64 private oraclePrediction;
     address public currentRequester;
     mapping(address => bool) public hasSubmitted;
@@ -49,6 +49,7 @@ contract CreditScorer {
 
     // === Locking Mechanism ===
     bool public locked; 
+
     constructor() {
         admin = msg.sender;
         oracle = new MockOracle();
@@ -58,13 +59,13 @@ contract CreditScorer {
 
     //============ User Function / Entry Point ============  
     function makeCreditRequest(uint16 userId) public payable {
-        require(!locked, "A Credit scoring request is ongoing and the contract is locked, please try again later.");
+        require(!locked, "A credit scoring request is ongoing and the contract is locked, please try again later.");
         locked = true;
         resetSubmissions();
         currentRequester = msg.sender;
-        testData = oracle.getUserData(userId);
+        secondaryData = oracle.getUserData(userId);
         oraclePrediction = oracle.getUserDelinquencyPrediction(userId);
-        emit PassOutTree(msg.sender, testData);
+        emit PassOutTree(msg.sender, secondaryData);
     }
 
     //============ SubTreeContractor dAPPs Function ============  
@@ -86,7 +87,7 @@ contract CreditScorer {
 
         if (submissionCount == contractorList.length) {
             uint256 finalisedPrediction = finalizeSubmissions();
-            emit AnomalyAudit(msg.sender, testData, finalisedPrediction);
+            emit AnomalyAudit(msg.sender, secondaryData, finalisedPrediction);
         } 
     }
 
@@ -97,7 +98,6 @@ contract CreditScorer {
         ourAnomalyScore = anomalyScore;
         ourOutlier = isOutlier;
 
-        // Add to the audit receipts list
         auditReceiptsList.push(AuditResult({
             requester: requester,
             prediction: ourPrediction,
