@@ -24,7 +24,7 @@ def test(data):
     return score
 
 # Load the original CSV
-df = pd.read_csv("Data/cs-test2.csv")  # Replace with the actual CSV filename
+df = pd.read_csv("Data/cs-test2.csv")
 
 # Drop unwanted columns
 df = df.drop(columns=["Id", "SeriousDlqin2yrs"])
@@ -43,7 +43,7 @@ for _, row in df.iterrows():
     if score > 0.3:
         accepted_entries.append(row)
 
-    if len(accepted_entries) == 100:
+    if len(accepted_entries) == 500:
         break
 
 # Write to new CSV
