@@ -14,7 +14,7 @@ stats_path: Union[str, Path] = "ae_artifacts/ae_residual_stats.npz",
 threshold_z: float = 2.0,
 batch_size: int = 512,
 
-def get_pre_anomaly_score(
+def pre_processing(
     df: pd.DataFrame,
 ) -> pd.DataFrame:
     

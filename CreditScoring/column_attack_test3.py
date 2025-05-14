@@ -7,7 +7,7 @@ import os
 import seaborn as sns
 
 from pre_processing import pre_processing
-from post_processing import get_post_anomaly_score
+from post_processing import postprocess_prediction
 
 # Load the model
 booster = xgb.Booster()
@@ -39,7 +39,7 @@ def get_scores(data):
         'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
         'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'
     ])
-    postproc_results = get_post_anomaly_score(
+    postproc_results = postprocess_prediction(
         booster=booster,
         entry_df=df,
         predicted=prediction
@@ -62,7 +62,7 @@ value_ranges = {
 }
 
 # Load dataset
-df = pd.read_csv("Data/high_score_predictions.csv")
+df = pd.read_csv("Data/high_score_predictions2.csv")
 
 # Path to save/load results
 results_file = "Data/improvement_results.pkl"
