@@ -39,6 +39,7 @@ def get_post_anomaly_score(
 
     
     background_data = bg_data.sample(n=background_size, random_state=random_state)
+    background_data = background_data.drop(columns=exclude_features, errors='ignore')
     entry_df = entry_df.drop(columns=exclude_features, errors='ignore')
     entry_df = entry_df[background_data.columns]
 
