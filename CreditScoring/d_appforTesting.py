@@ -1,7 +1,7 @@
 import pandas as pd
 import xgboost as xgb
 from pre_processing import pre_processing
-from post_processing import postprocess_prediction
+from post_processing import get_post_anomaly_score
 
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
@@ -32,7 +32,7 @@ def test(data):
         
     else: prediction = 0
     
-    postproc_results = postprocess_prediction(
+    postproc_results = get_post_anomaly_score(
         booster=booster,
         entry_df=df,
         predicted =  prediction

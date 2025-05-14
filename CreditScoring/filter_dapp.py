@@ -6,7 +6,7 @@ from eth_abi import decode
 from joblib import load
 import pandas as pd
 import xgboost as xgb
-from post_processing import postprocess_prediction
+from post_processing import get_post_anomaly_score
 from pre_processing import pre_processing
 import json
 
@@ -42,7 +42,7 @@ def get_prediction_score(df):
 def get_scores(df):
     score = get_prediction_score(df)
     prediction = 1 if score > 0.4 else 0
-    postproc_results = postprocess_prediction(
+    postproc_results = get_post_anomaly_score(
         booster=booster,
         entry_df=df,
         predicted=prediction

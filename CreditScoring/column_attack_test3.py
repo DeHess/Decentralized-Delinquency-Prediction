@@ -7,7 +7,7 @@ import os
 import seaborn as sns
 
 from pre_processing import pre_processing
-from post_processing import postprocess_prediction
+from post_processing import get_post_anomaly_score
 
 # Load the model
 booster = xgb.Booster()
@@ -39,7 +39,7 @@ def get_scores(data):
         'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
         'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'
     ])
-    postproc_results = postprocess_prediction(
+    postproc_results = get_post_anomaly_score(
         booster=booster,
         entry_df=df,
         predicted=prediction

@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pre_processing import pre_processing
-from post_processing import postprocess_prediction
+from post_processing import get_post_anomaly_score
 import xgboost as xgb
 import numpy as np
 
@@ -27,7 +27,7 @@ def test(data):
     raw_score = booster.predict(dmatrix)[0]
     prediction = 1 if raw_score > 0.4 else 0
     
-    postproc_results = postprocess_prediction(
+    postproc_results = get_post_anomaly_score(
         booster=booster,
         entry_df=df,
         predicted=prediction

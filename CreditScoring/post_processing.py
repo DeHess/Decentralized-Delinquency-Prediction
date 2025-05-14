@@ -12,7 +12,7 @@ def calculate_zscore_anomaly(instance, background):
     return np.mean(np.abs(z_scores))
 
 
-def postprocess_prediction(
+def get_post_anomaly_score(
     booster,
     entry_df,
     predicted,

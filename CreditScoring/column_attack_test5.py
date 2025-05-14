@@ -6,7 +6,7 @@ import pickle
 import os
 import seaborn as sns
 
-from pre_processing import pre_processing
+from pre_processing import get_pre_anomaly_score
 from post_processing import get_post_anomaly_score
 
 
@@ -46,8 +46,13 @@ def get_scores(data):
         entry_df=df,
         predicted=prediction
     )
-    anomaly_score = postproc_results.get("anomaly_score", 0)
-    print("===")
+    post_anomaly_score = postproc_results.get("anomaly_score", 0)
+    
+    preproc_results = get_pre_anomaly_score(df)
+    pre_anomaly_score = preproc_results.get("z_score")
+
+    anomaly_score = (post_anomaly_score + pre_anomaly_score) / 2
+
     return score, anomaly_score
 
 # Value ranges for features
@@ -74,7 +79,7 @@ skip_columns = [
 df = pd.read_csv("Data/high_score_predictions2.csv")
 
 # Path to save/load results
-results_file = "Data/improvement_results2.pkl"
+results_file = "Data/improvement_results3.pkl"
 
 # Check if we already have saved results
 if os.path.exists(results_file):
@@ -117,8 +122,8 @@ else:
             for val in values_to_test:
                 modified_row = row.copy()
                 modified_row[column] = val
-                score = get_prediction_score(modified_row)
-                anomaly_score = get_scores(modified_row)[1]
+
+                score, anomaly_score = get_scores(modified_row)
 
                 if score < min_score:
                     min_score = score
@@ -143,7 +148,7 @@ else:
     with open(results_file, "wb") as f:
         pickle.dump(results_to_save, f)
 
-    print("Results saved to Data/improvement_results2.pkl")
+    print("Results saved to Data/improvement_results3.pkl")
 
 # Print results
 for column in value_ranges:

@@ -4,7 +4,7 @@ import xgboost as xgb
 import numpy as np
 
 from pre_processing import pre_processing
-from post_processing import postprocess_prediction
+from post_processing import get_post_anomaly_score
 
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
