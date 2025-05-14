@@ -7,12 +7,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-model_path: Union[str, Path] = "ae_artifacts/ae_model.h5",
-scaler_path: Union[str, Path] = "ae_artifacts/ae_scaler.pkl",
-stats_path: Union[str, Path] = "ae_artifacts/ae_residual_stats.npz",
+model_path: Union[str, Path] = "ae_artifacts/ae_model.h5"
+scaler_path: Union[str, Path] = "ae_artifacts/ae_scaler.pkl"
+stats_path: Union[str, Path] = "ae_artifacts/ae_residual_stats.npz"
 
-threshold_z: float = 2.0,
-batch_size: int = 512,
+threshold_z: float = 2.0
+batch_size: int = 512
 
 def pre_processing(
     df: pd.DataFrame,

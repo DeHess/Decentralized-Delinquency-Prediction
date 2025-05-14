@@ -50,6 +50,8 @@ def get_scores(data):
     pre_anomaly_score = preproc_results.get("z_score", 0)
 
     combined_anomaly_score = (post_anomaly_score + pre_anomaly_score) / 2
+    
+    print("====")
 
     return score, combined_anomaly_score
 
