@@ -6,7 +6,7 @@ import pickle
 import os
 import seaborn as sns
 
-from pre_processing import pre_processing
+from pre_processing import get_pre_anomaly_score
 from post_processing import get_post_anomaly_score
 
 # Load the model
