@@ -8,6 +8,14 @@ import os
 from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
+import tensorflow as tf
+import logging
+tf.get_logger().setLevel(logging.ERROR)
+
 # Load the model
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
@@ -48,6 +56,7 @@ results_file = "Data/improvement_results5.pkl"
 
 # Define helper functions
 def get_prediction_score(data):
+    print("+", end="", flush=True)
     dmatrix = xgb.DMatrix(pd.DataFrame([data], columns=columns))
     return booster.predict(dmatrix)[0]
 
@@ -78,6 +87,8 @@ else:
     anomaly_scores = []
 
     for idx, row in df.iterrows():
+        print("")
+        print("Working on entry: ", idx)
         original_data = row.tolist()
         original_score = get_prediction_score(original_data)
         original_anomaly = get_anomaly_score(original_data, original_score)
@@ -86,14 +97,18 @@ else:
         anomaly_scores.append(original_anomaly)
 
         for col in columns:
+           
             if col in skip_columns:
                 continue
+
+            print("Working on column: ", col)
 
             col_idx = columns.index(col)
             best_data = original_data.copy()
             best_score = original_score
 
             for val in value_ranges[col]:
+                
                 temp_data = original_data.copy()
                 temp_data[col_idx] = val
                 score = get_prediction_score(temp_data)
@@ -109,7 +124,9 @@ else:
             improvements[col].append(score_improvement)
             anomaly_score_changes[col].append(anomaly_change)
 
-            print(f"Processed row {idx}, feature '{col}'")
+            print("")
+            print("")
+
 
     with open(results_file, "wb") as f:
         pickle.dump({
