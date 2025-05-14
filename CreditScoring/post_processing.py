@@ -43,13 +43,13 @@ def get_post_anomaly_score(
     entry_df = entry_df.drop(columns=exclude_features, errors='ignore')
     entry_df = entry_df[background_data.columns]
 
-    print(f" background data {background_data.size}")
-    print(f"entrydf {entry_df.size}")
+    print(f"Background data column size: {background_data.shape[1]}")
+    print(f"entrydf {entry_df.shape[1]}")
     
     explainer = shap.TreeExplainer(
         booster,
         data=background_data,
-        feature_perturbation='tree_path_dependent'
+        feature_perturbation='interventional'
     )
     
     shap_values_all = explainer.shap_values(entry_df)
