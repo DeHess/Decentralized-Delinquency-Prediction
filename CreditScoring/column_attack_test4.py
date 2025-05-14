@@ -9,8 +9,6 @@ import seaborn as sns
 from pre_processing import pre_processing
 from post_processing import postprocess_prediction
 
-
-
 # Load the model
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
@@ -46,9 +44,14 @@ def get_scores(data):
         entry_df=df,
         predicted=prediction
     )
-    anomaly_score = postproc_results.get("anomaly_score", 0)
-    print("===")
-    return score, anomaly_score
+    post_anomaly_score = postproc_results.get("anomaly_score", 0)
+
+    preproc_results = pre_processing(df)
+    pre_anomaly_score = preproc_results.get("z_score", 0)
+
+    combined_anomaly_score = (post_anomaly_score + pre_anomaly_score) / 2
+
+    return score, combined_anomaly_score
 
 # Value ranges for features
 value_ranges = {
