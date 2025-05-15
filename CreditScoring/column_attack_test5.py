@@ -43,7 +43,7 @@ value_ranges = {
     'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)),
     'NumberOfTime60-89DaysPastDueNotWorse': list(range(21)),
     'NumberOfTimes90DaysLate': list(range(21)),
-    'age': list(range(18, 70)),
+    'age': list(range(18, 90)),
     'DebtRatio': [round(x * 0.05, 2) for x in range(21)],
     'RevolvingUtilizationOfUnsecuredLines': [round(x * 0.05, 2) for x in range(21)],
     'MonthlyIncome': list(range(0, 70000, 1000)),
@@ -56,7 +56,6 @@ results_file = "Data/improvement_results5.pkl"
 
 # Define helper functions
 def get_prediction_score(data):
-    print("+", end="", flush=True)
     dmatrix = xgb.DMatrix(pd.DataFrame([data], columns=columns))
     return booster.predict(dmatrix)[0]
 
@@ -111,6 +110,7 @@ else:
                 
                 temp_data = original_data.copy()
                 temp_data[col_idx] = val
+                print("+", end="", flush=True)
                 score = get_prediction_score(temp_data)
                 if score < best_score:
                     best_score = score
@@ -124,7 +124,6 @@ else:
             improvements[col].append(score_improvement)
             anomaly_score_changes[col].append(anomaly_change)
 
-            print("")
             print("")
 
 
