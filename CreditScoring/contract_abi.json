@@ -65,12 +65,6 @@
 			},
 			{
 				"indexed": false,
-				"internalType": "bool",
-				"name": "outlier",
-				"type": "bool"
-			},
-			{
-				"indexed": false,
 				"internalType": "uint256",
 				"name": "anomalyScore",
 				"type": "uint256"
@@ -95,17 +89,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			},
-			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
 			}
 		],
-		"name": "auditReceipts",
+		"name": "auditReceiptsList",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -116,11 +105,6 @@
 				"internalType": "uint256",
 				"name": "prediction",
 				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isOutlier",
-				"type": "bool"
 			},
 			{
 				"internalType": "uint256",
@@ -142,11 +126,6 @@
 				"internalType": "address",
 				"name": "requester",
 				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "isOutlier",
-				"type": "bool"
 			},
 			{
 				"internalType": "uint256",
@@ -200,12 +179,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
+				"internalType": "uint256",
 				"name": "",
-				"type": "address"
+				"type": "uint256"
 			}
 		],
-		"name": "contractorSubmissions",
+		"name": "contractorSubmissionsList",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -253,6 +232,19 @@
 			}
 		],
 		"name": "hasSubmitted",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "locked",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -329,6 +321,37 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "addr",
+				"type": "address"
+			}
+		],
+		"name": "removeContractor",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "prediction",
+				"type": "uint256"
+			}
+		],
+		"name": "subTreeAnswer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "submissionCount",
 		"outputs": [
@@ -339,19 +362,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "prediction",
-				"type": "uint256"
-			}
-		],
-		"name": "writeSubTreeAnswer",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

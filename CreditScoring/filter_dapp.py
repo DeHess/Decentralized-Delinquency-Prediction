@@ -72,8 +72,8 @@ with open('contract_abi.json', 'r') as abi_file:
 contract = w3.eth.contract(address=contract_address, abi=contract_abi)
 
 
-def send_scores(sender, is_outlier, score):
-    transaction = contract.functions.auditResults(sender, is_outlier, score).build_transaction({
+def sendAuditResults(sender, score):
+    transaction = contract.functions.auditResults(sender, score).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -107,23 +107,8 @@ def listen_for_incoming_audit_requests():
             prediction_score = get_prediction_score(data)
 
             print(prediction_score)
-
-            """
-            columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
-            df = pd.DataFrame(data_list, columns=columns)
-            
-            # Preprocessing
-            is_outlier = bool(pre_processing(df))
-
-			# Postprocessing
-            score, anomaly_score = get_scores(df)
-            print(convert_to_float(prediction))
-            print("Outlier?: ", is_outlier)
-            """
-            
-            #print(f"Score: ", score)
-            #print("Anomaly Score", anomaly_score)						
-            send_scores(Web3.to_checksum_address(sender), True, convert_to_int(anomaly_score))
+					
+            sendAuditResults(Web3.to_checksum_address(sender), convert_to_int(anomaly_score))
 
 
             #print(f"Sender: {sender}")

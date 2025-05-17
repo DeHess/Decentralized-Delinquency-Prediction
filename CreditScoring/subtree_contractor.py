@@ -36,8 +36,8 @@ def convert_to_float(val):
 def convert_to_int(val):
     return int(round(val * 1_000_000_000))
 
-def post_subtree_results(result):
-    transaction = contract.functions.writeSubTreeAnswer(result).build_transaction({
+def send_subtree_answer(requester_address, result):
+    transaction = contract.functions.subTreeAnswer(requester_address, result).build_transaction({
         'chainId': 1337, 
         'gas': 2000000,
         'gasPrice': w3.to_wei('20', 'gwei'),
@@ -64,12 +64,13 @@ def listen_for_passout_events():
             data_list[0] = convert_to_float(data[0])
             data_list[3] = convert_to_float(data[3])
             data_list = [data_list]
+
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
             dmatrix_first = xgb.DMatrix(df)
             tree_pred = model.predict(dmatrix_first, iteration_range=(contractor_id, contractor_id+1))
             print(tree_pred[0])
-            post_subtree_results(convert_to_int(tree_pred[0]))
+            send_subtree_answer(Web3.to_checksum_address(sender), convert_to_int(tree_pred[0]))
             print("========")
 
         time.sleep(5)
