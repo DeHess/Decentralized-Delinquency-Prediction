@@ -6,26 +6,15 @@ from eth_abi import decode
 from joblib import load
 import pandas as pd
 import xgboost as xgb
-from post_processing import get_post_anomaly_score
+from post_processing import postprocess_prediction
 from pre_processing import pre_processing
 import json
 
-w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
+
 
 # Load the model
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
-
-def convert_to_dataframe(data):
-    data_list = list(data)
-    columns = [
-        'RevolvingUtilizationOfUnsecuredLines', 'age',
-        'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio',
-        'MonthlyIncome','NumberOfOpenCreditLinesAndLoans',
-        'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines',
-        'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents'
-    ]
-    return pd.DataFrame([data_list], columns=columns)
 
 # Smart Contract can't do floats so here we go.
 def convert_to_float(val):
@@ -34,24 +23,31 @@ def convert_to_float(val):
 def convert_to_int(val):
     return int(round(val * 1_000_000_000_0))
 
-def get_prediction_score(df):
-    dmatrix = xgb.DMatrix(df)
-    score = booster.predict(dmatrix)[0]
-    return score
+columns = [
+    'RevolvingUtilizationOfUnsecuredLines', 'age',
+    'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio',
+    'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans',
+    'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
+    'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents'
+]
 
-def get_scores(df):
-    score = get_prediction_score(df)
-    prediction = 1 if score > 0.4 else 0
-    postproc_results = get_post_anomaly_score(
-        booster=booster,
-        entry_df=df,
-        predicted=prediction
-    )
-    anomaly_score = postproc_results.get("anomaly_score", 0)
-    return score, anomaly_score
+def get_anomaly_score(data, pred_score):
+    prediction = 1 if pred_score > 0.4 else 0
+    df_entry = pd.DataFrame([list(data)], columns=columns)
+    postproc_results = postprocess_prediction(booster, df_entry, predicted=prediction)
+    post_anomaly_score = postproc_results.get("anomaly_score", 0)
+    preproc_results = pre_processing(df_entry)
+    pre_anomaly_score = preproc_results.get("z_score").values[0]
+    return (post_anomaly_score + pre_anomaly_score) / 2
+
+def get_prediction_score(data):
+    dmatrix = xgb.DMatrix(pd.DataFrame([data], columns=columns))
+    return booster.predict(dmatrix)[0]
 
 
 
+
+w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
 
 if not w3.is_connected():
     print("Connection failed!")
@@ -107,6 +103,12 @@ def listen_for_incoming_audit_requests():
             data_list[3] = convert_to_float(data[3])
             data_list = [data_list]
 
+            anomaly_score = get_anomaly_score(data, convert_to_float(prediction))
+            prediction_score = get_prediction_score(data)
+
+            print(prediction_score)
+
+            """
             columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 'MonthlyIncome','NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate','NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse','NumberOfDependents']
             df = pd.DataFrame(data_list, columns=columns)
             
@@ -117,13 +119,15 @@ def listen_for_incoming_audit_requests():
             score, anomaly_score = get_scores(df)
             print(convert_to_float(prediction))
             print("Outlier?: ", is_outlier)
-            print(f"Score: ", score)
-            print("Anomaly Score", anomaly_score)						
-            send_scores(Web3.to_checksum_address(sender), is_outlier, convert_to_int(anomaly_score))
+            """
+            
+            #print(f"Score: ", score)
+            #print("Anomaly Score", anomaly_score)						
+            send_scores(Web3.to_checksum_address(sender), True, convert_to_int(anomaly_score))
 
 
-            print(f"Sender: {sender}")
-            print("Values:", data_list)
+            #print(f"Sender: {sender}")
+            #print("Values:", data_list)
             print("========")
             
         time.sleep(5)
