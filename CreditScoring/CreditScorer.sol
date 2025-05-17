@@ -34,7 +34,6 @@ contract CreditScorer {
     struct AuditResult {
         address requester;
         uint256 prediction;
-        bool isOutlier;
         uint256 anomalyScore;
         uint256 timestamp;
     }
@@ -44,7 +43,7 @@ contract CreditScorer {
 
     // === Events ===
     event AnomalyAudit(address indexed _addr, uint256[] heldData, uint256 prediction);
-    event PostAuditResults(address indexed _addr, uint256 prediction, bool outlier, uint256 anomalyScore);
+    event PostAuditResults(address indexed _addr, uint256 prediction, uint256 anomalyScore);
     event PassOutTree(address indexed _addr, uint256[] heldData);
 
     // === Locking Mechanism ===
@@ -69,7 +68,7 @@ contract CreditScorer {
     }
 
     //============ SubTreeContractor dAPPs Function ============  
-    function writeSubTreeAnswer(uint256 prediction) public {
+    function subTreeAnswer(address requester, uint256 prediction) public {
         require(isAllowedContractor(msg.sender), "Only contractors can submit");
         require(!hasSubmitted[msg.sender], "Contractor already submitted");
 
@@ -77,7 +76,7 @@ contract CreditScorer {
         submissionCount++;
 
         contractorSubmissionsList.push(ContractorSubmission({
-            requester: currentRequester,
+            requester: requester,
             contractor: msg.sender,
             prediction: prediction,
             timestamp: block.timestamp
@@ -92,21 +91,19 @@ contract CreditScorer {
     }
 
     //============ Auditor dAPP Function ============  
-    function auditResults(address requester, bool isOutlier, uint256 anomalyScore) public {
+    function auditResults(address requester, uint256 anomalyScore) public {
         require(msg.sender == admin, "Requires admin credentials");
 
         ourAnomalyScore = anomalyScore;
-        ourOutlier = isOutlier;
 
         auditReceiptsList.push(AuditResult({
             requester: requester,
             prediction: ourPrediction,
-            isOutlier: isOutlier,
             anomalyScore: anomalyScore,
             timestamp: block.timestamp
         }));
 
-        emit PostAuditResults(requester, ourPrediction, isOutlier, anomalyScore);
+        emit PostAuditResults(requester, ourPrediction, anomalyScore);
 
         locked = false;
     }
