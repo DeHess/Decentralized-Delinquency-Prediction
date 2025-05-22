@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import xgboost as xgb
 import numpy as np
 
-from pre_processing import pre_processing
-from post_processing import get_post_anomaly_score
 
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
@@ -43,7 +41,7 @@ for _, row in df.iterrows():
     if score > 0.3:
         accepted_entries.append(row)
 
-    if len(accepted_entries) == 500:
+    if len(accepted_entries) == 2000:
         break
 
 # Write to new CSV
