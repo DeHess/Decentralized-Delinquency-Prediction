@@ -139,12 +139,48 @@ else:
 
 # Plot
 for col in improvements:
-    x = improvements[col]
-    y = anomaly_score_changes[col]
+    x = anomaly_score_changes[col]
+    y = improvements[col]
+    
+    # Count points to the left and right of x=0
+    left_count = sum(1 for val in x if val < 0)
+    right_count = sum(1 for val in x if val >= 0)
+    
     plt.figure()
-    plt.scatter(x, y, alpha=0.6)
-    plt.xlabel("Score Improvement")
-    plt.ylabel("Anomaly Score Change")
-    plt.title(f"{col}: Score Improvement vs Anomaly Change")
+    plt.scatter(x, y, s=10, alpha=0.6)
+    plt.xlabel("Anomaly Score Change")
+    plt.ylabel("Score Improvement")
+    plt.title(f"{col}: Anomaly Change vs Score Improvement")
+    plt.xlim(-2.5, 4)
+    plt.ylim(0, 0.6)
+    plt.axvline(x=0, color='red', linestyle='--', linewidth=1)
+
+    # Add text annotations for counts
+    plt.text(-2.4, 0.55, f"< 0: {left_count}", color='red', ha='left', fontsize=10)
+    plt.text(2.5, 0.55, f"≥ 0: {right_count}", color='red', ha='right', fontsize=10)
+
     plt.grid(True)
     plt.show()
+
+    features = [col for col in columns if col not in skip_columns]
+
+
+features = [col for col in columns if col not in skip_columns]
+
+# Calculate mean improvements
+mean_improvements = [np.mean(improvements[feat]) for feat in features]
+
+# Sort by descending improvement
+sorted_indices = np.argsort(mean_improvements)[::-1]
+sorted_features = [features[i] for i in sorted_indices]
+sorted_improvements = [mean_improvements[i] for i in sorted_indices]
+
+plt.figure(figsize=(12, 6))
+bars = plt.bar(sorted_features, sorted_improvements, color='skyblue', alpha=0.7)
+plt.ylabel('Average Score Improvement')
+plt.title('Average Score Improvement per Feature (Sorted Descending)')
+
+plt.xticks(rotation=45, ha='right')  # Rotate and align text to the right for clarity
+
+plt.tight_layout()
+plt.show()
