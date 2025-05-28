@@ -74,6 +74,19 @@
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "MAX_WAIT_TIME",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -147,6 +160,13 @@
 			}
 		],
 		"name": "changeServicePrice",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "checkDeadlineAndFinalize",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -244,6 +264,19 @@
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "finalized",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -375,6 +408,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "requestStartTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "servicePrice",
 		"outputs": [
 			{
@@ -407,6 +453,19 @@
 	{
 		"inputs": [],
 		"name": "submissionCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "submissionDeadline",
 		"outputs": [
 			{
 				"internalType": "uint256",

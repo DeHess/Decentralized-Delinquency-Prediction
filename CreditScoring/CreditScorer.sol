@@ -49,13 +49,20 @@ contract DelinquencyPredictor {
     event PassOutTree(address indexed _addr, uint256[] heldData);
 
     // === Locking Mechanism ===
-    bool public locked; 
+    bool public locked;
+
+    // === Deadline Variables ===
+    uint256 public requestStartTime;
+    uint256 public submissionDeadline;
+    uint256 public constant MAX_WAIT_TIME = 5 minutes;
+    bool public finalized;
 
     constructor() {
         admin = msg.sender;
         oracle = new MockOracle();
         contractorList.push(admin);
-        locked = false; 
+        locked = false;
+        finalized = false;
         servicePrice = 10 ether;
         contractorFee = 1 ether;
     }
@@ -66,9 +73,12 @@ contract DelinquencyPredictor {
         require(msg.value == servicePrice, "Incorrect payment: check servicePrice attribute.");
         locked = true;
         resetSubmissions();
+        finalized = false;
         currentRequester = msg.sender;
         secondaryData = oracle.getUserData(userId);
         oraclePrediction = oracle.getUserDelinquencyPrediction(userId);
+        requestStartTime = block.timestamp;
+        submissionDeadline = block.timestamp + MAX_WAIT_TIME;
         emit PassOutTree(msg.sender, secondaryData);
     }
 
@@ -76,6 +86,7 @@ contract DelinquencyPredictor {
     function subTreeAnswer(address requester, uint256 prediction) public {
         require(isAllowedContractor(msg.sender), "Only contractors can submit");
         require(!hasSubmitted[msg.sender], "Contractor already submitted");
+        require(!finalized, "Submissions are finalized");
 
         hasSubmitted[msg.sender] = true;
         submissionCount++;
@@ -87,21 +98,32 @@ contract DelinquencyPredictor {
             timestamp: block.timestamp
         }));
 
-        contractorPredictions[msg.sender] = prediction; 
+        contractorPredictions[msg.sender] = prediction;
 
         if (submissionCount == contractorList.length) {
-            uint256 finalisedPrediction = finalizeSubmissions();
-            emit AnomalyAudit(msg.sender, secondaryData, finalisedPrediction);
+            checkDeadlineAndFinalize();
+        }
+    }
 
-            // === Pay subtree contractor fee  ===
-            for (uint i = 0; i < contractorList.length; i++) {
+    //============ Deadline Finalization ============  
+    function checkDeadlineAndFinalize() public {
+        require(!finalized, "Submissions already finalized.");
+        require(block.timestamp >= submissionDeadline || submissionCount == contractorList.length, "Deadline not reached and not all contractors have submitted.");
+
+        uint256 minRequired = (contractorList.length * 2) / 3;
+        require(submissionCount >= minRequired, "Not enough contractor submissions (2/3 rule).");
+
+        uint256 finalisedPrediction = finalizeSubmissions();
+        finalized = true;
+        emit AnomalyAudit(msg.sender, secondaryData, finalisedPrediction);
+
+        for (uint i = 0; i < contractorList.length; i++) {
+            if (hasSubmitted[contractorList[i]]) {
                 address payable contractor = payable(contractorList[i]);
                 (bool sent, ) = contractor.call{value: contractorFee}("");
                 require(sent, "Failed to send contractor fee");
             }
-        } 
-
-
+        }
     }
 
     //============ Auditor dAPP Function ============  
@@ -132,11 +154,14 @@ contract DelinquencyPredictor {
 
     function finalizeSubmissions() internal returns (uint256) {
         uint256 sum = 0;
-        uint256 count = contractorList.length;
-        for (uint i = 0; i < count; i++) {
-            sum += contractorPredictions[contractorList[i]];
+        uint256 count = 0;
+        for (uint i = 0; i < contractorList.length; i++) {
+            if (hasSubmitted[contractorList[i]]) {
+                sum += contractorPredictions[contractorList[i]];
+                count++;
+            }
         }
-        require(count > 0, "No contractor submissions"); 
+        require(count > 0, "No valid contractor submissions");
         uint256 pred = sum / count;
         ourPrediction = pred;
         return pred;
