@@ -3,12 +3,14 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol"; 
 import "./MockOracle.sol";
 
-contract CreditScorer {
+contract DelinquencyPredictor {
 
     // === Infrastructure, Ownership ===
     MockOracle public oracle;
     address private admin;
     address[] public contractorList;
+    uint256 public servicePrice;
+    uint256 public contractorFee;
 
     // === Volatile Variables
     uint256[] private secondaryData;
@@ -54,11 +56,14 @@ contract CreditScorer {
         oracle = new MockOracle();
         contractorList.push(admin);
         locked = false; 
+        servicePrice = 10 ether;
+        contractorFee = 1 ether;
     }
 
     //============ User Function / Entry Point ============  
     function makeCreditRequest(uint16 userId) public payable {
         require(!locked, "A credit scoring request is ongoing and the contract is locked, please try again later.");
+        require(msg.value == servicePrice, "Incorrect payment: check servicePrice attribute.");
         locked = true;
         resetSubmissions();
         currentRequester = msg.sender;
@@ -87,7 +92,16 @@ contract CreditScorer {
         if (submissionCount == contractorList.length) {
             uint256 finalisedPrediction = finalizeSubmissions();
             emit AnomalyAudit(msg.sender, secondaryData, finalisedPrediction);
+
+            // === Pay subtree contractor fee  ===
+            for (uint i = 0; i < contractorList.length; i++) {
+                address payable contractor = payable(contractorList[i]);
+                (bool sent, ) = contractor.call{value: contractorFee}("");
+                require(sent, "Failed to send contractor fee");
+            }
         } 
+
+
     }
 
     //============ Auditor dAPP Function ============  
@@ -145,7 +159,7 @@ contract CreditScorer {
 
     function removeContractor(address addr) public {
         require(msg.sender == admin, "Only admin can remove contractors.");
-        require(isAllowedContractor(addr), "This address is not in the list");
+        require(isAllowedContractor(addr), "This address is not in the contractor list");
         for (uint i = 0; i < contractorList.length; i++) {
             if (contractorList[i] == addr) {
                 contractorList[i] = contractorList[contractorList.length - 1];
@@ -154,5 +168,23 @@ contract CreditScorer {
             }
         }
         revert("Contractor address not found.");
+    }
+
+    function changeServicePrice(uint256 newPrice) public {
+        require(msg.sender == admin, "Only the admin may change the price of the service.");
+        require(locked == false, "Cannot change price while contract is locked.");
+        servicePrice = newPrice;
+    }
+
+    function manualLock() public {
+        require(msg.sender == admin, "Only the admin may lock the contract manually.");
+        require(locked == false, "The contract is already locked");
+        locked = true;
+    }
+
+    function manualUnlock() public {
+        require(msg.sender == admin, "Only the admin may unlock the contract manually.");
+        require(locked == true, "The contract is already unlocked");
+        locked = false;
     }
 }
