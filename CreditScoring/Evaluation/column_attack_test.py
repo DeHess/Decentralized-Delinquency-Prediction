@@ -16,13 +16,13 @@ import tensorflow as tf
 import logging
 tf.get_logger().setLevel(logging.ERROR)
 
-# Load the model
+
 booster = xgb.Booster()
 booster.load_model("Model/model.json")
 
-# Column names
+
 columns = [
-    'RevolvingUtilizationOfUnsecuredLines', 'age',
+    'age',
     'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio',
     'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans',
     'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
@@ -32,13 +32,14 @@ columns = [
 skip_columns = [
     'NumberOfTime30-59DaysPastDueNotWorse',
     'NumberOfTime60-89DaysPastDueNotWorse',
-    'NumberOfTimes90DaysLate'
+    'NumberOfTimes90DaysLate',
+    'RevolvingUtilizationOfUnsecuredLines'
 ]
 
-# Load data
+
 df = pd.read_csv("Data/high_score_predictions2.csv")
 
-# Value ranges for features
+
 value_ranges = {
     'NumberOfTime30-59DaysPastDueNotWorse': list(range(21)),
     'NumberOfTime60-89DaysPastDueNotWorse': list(range(21)),
@@ -52,9 +53,9 @@ value_ranges = {
     'NumberRealEstateLoansOrLines': list(range(11)),
 }
 
-results_file = "Data/improvement_results5.pkl"
+results_file = "Data/improvement_results.pkl"
 
-# Define helper functions
+
 def get_prediction_score(data):
     dmatrix = xgb.DMatrix(pd.DataFrame([data], columns=columns))
     return booster.predict(dmatrix)[0]
@@ -68,7 +69,7 @@ def get_anomaly_score(data, pred_score):
     pre_anomaly_score = preproc_results.get("z_score").values[0]
     return (post_anomaly_score + pre_anomaly_score) / 2
 
-# Load if exists
+
 if os.path.exists(results_file):
     with open(results_file, "rb") as f:
         saved_data = pickle.load(f)
@@ -137,12 +138,12 @@ else:
         }, f)
     print("Saved results to pickle.")
 
-# Plot
+
 for col in improvements:
     x = anomaly_score_changes[col]
     y = improvements[col]
     
-    # Count points to the left and right of x=0
+
     left_count = sum(1 for val in x if val < 0)
     right_count = sum(1 for val in x if val >= 0)
     
@@ -155,7 +156,6 @@ for col in improvements:
     plt.ylim(0, 0.6)
     plt.axvline(x=0, color='red', linestyle='--', linewidth=1)
 
-    # Add text annotations for counts
     plt.text(-2.4, 0.55, f"< 0: {left_count}", color='red', ha='left', fontsize=10)
     plt.text(2.5, 0.55, f"≥ 0: {right_count}", color='red', ha='right', fontsize=10)
 
@@ -167,10 +167,10 @@ for col in improvements:
 
 features = [col for col in columns if col not in skip_columns]
 
-# Calculate mean improvements
+
 mean_improvements = [np.mean(improvements[feat]) for feat in features]
 
-# Sort by descending improvement
+
 sorted_indices = np.argsort(mean_improvements)[::-1]
 sorted_features = [features[i] for i in sorted_indices]
 sorted_improvements = [mean_improvements[i] for i in sorted_indices]
@@ -180,7 +180,7 @@ bars = plt.bar(sorted_features, sorted_improvements, color='skyblue', alpha=0.7)
 plt.ylabel('Average Score Improvement')
 plt.title('Average Score Improvement per Feature (Sorted Descending)')
 
-plt.xticks(rotation=45, ha='right')  # Rotate and align text to the right for clarity
+plt.xticks(rotation=45, ha='right')  
 
 plt.tight_layout()
 plt.show()

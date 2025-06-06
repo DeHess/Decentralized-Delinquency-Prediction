@@ -44,18 +44,5 @@ model.fit(
     verbose=False
 )
 
-pred_probs = model.predict_proba(X_test)[:, 1]
-default_preds = (pred_probs >= 0.5).astype(int)
-print("Classification Report (Default 0.5 threshold):")
-print(classification_report(y_test, default_preds))
-
-threshold = 0.4
-adjusted_preds = (pred_probs >= threshold).astype(int)
-print("Classification Report (Adjusted threshold of 0.4):")
-print(classification_report(y_test, adjusted_preds))
-
-auc_score = roc_auc_score(y_test, pred_probs)
-print(f"AUC Score: {auc_score:.4f}")
-
 model.save_model("model.json")
 
